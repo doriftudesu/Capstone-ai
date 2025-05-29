@@ -19,7 +19,7 @@ LIGHT_THEME = {"bg": "#ECF0F1", "hover": "#BDC3C7", "text": wx.BLACK}
 
 class Sidebar(wx.Panel):
     def __init__(self, parent, on_select, theme):
-        super().__init__(parent, size=(240, -1))
+        super().__init__(parent, size=(240, -1gi))
         self.parent = parent
         self.on_select = on_select
         self.expanded = True

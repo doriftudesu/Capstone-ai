@@ -1,0 +1,74 @@
+:root {
+  --bg-dark: #2C3E50;
+  --hover-dark: #34495E;
+  --text-dark: #ffffff;
+  --bg-light: #ECF0F1;
+  --hover-light: #BDC3C7;
+  --text-light: #000000;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-dark);
+  display: flex;
+  overflow-x: hidden;
+}
+
+#sidebar {
+  width: 240px;
+  background-color: var(--bg-dark);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+}
+
+#sidebar.collapsed {
+  width: 60px;
+}
+
+.menu-btn {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.menu-btn:hover {
+  background-color: var(--hover-dark);
+}
+
+.submenu {
+  display: none;
+  flex-direction: column;
+  margin-left: 20px;
+}
+
+.submenu .menu-btn {
+  font-size: 14px;
+}
+
+#main {
+  flex-grow: 1;
+  padding: 20px;
+  background-color: var(--bg-dark);
+  color: var(--text-dark);
+  transition: margin-left 0.3s ease;
+}
+
+.toggle-theme, .toggle-sidebar {
+  margin-top: auto;
+  text-align: center;
+  padding: 10px;
+  cursor: pointer;
+  background-color: transparent;
+  border: none;
+  color: var(--text-dark);
+  font-weight: bold;
+}
+
+.toggle-sidebar {
+  font-size: 20px;
+}

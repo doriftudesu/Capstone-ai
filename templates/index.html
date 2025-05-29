@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Modern Flask UI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div id="sidebar">
+    <div class="menu-btn toggle-sidebar" onclick="toggleSidebar()">&#9776;</div>
+    <div class="menu-btn" onclick="toggleSubmenu('settings')">Settings</div>
+    <div id="settings" class="submenu">
+      <div class="menu-btn" onclick="loadPage('profile')">Profile</div>
+      <div class="menu-btn" onclick="loadPage('preferences')">Preferences</div>
+    </div>
+    <div class="menu-btn" onclick="loadPage('home')">Home</div>
+    <div class="menu-btn" onclick="toggleSubmenu('about')">About</div>
+    <div id="about" class="submenu">
+      <div class="menu-btn" onclick="loadPage('license')">License</div>
+    </div>
+    <button class="toggle-theme" onclick="toggleTheme()">Toggle Theme</button>
+  </div>
+
+  <div id="main">
+    <h1>Welcome to the Home Page!</h1>
+    <p>This is a modern UI built with Flask, HTML, CSS, and JavaScript.</p>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
