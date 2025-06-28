@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Upload Files</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="container">
+    <aside id="sidebar" class="expanded">
+      <div class="logo">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="App Logo">
+      </div>
+      <nav>
+        <ul>
+          <li onclick="loadPage('home')"><i data-lucide="home"></i><span>Home</span></li>
+          <li onclick="loadPage('dashboard')"><i data-lucide="bar-chart"></i><span>Dashboard</span></li>
+          <li onclick="loadPage('upload')" class="active"><i data-lucide="upload"></i><span>Upload</span></li>
+        </ul>
+      </nav>
+      <button onclick="toggleSidebar()" class="sidebar-toggle"><i data-lucide="chevrons-left"></i></button>
+      <button onclick="toggleTheme()" class="theme-toggle"><i data-lucide="moon"></i></button>
+    </aside>
+
+    <main id="main">
+      <h1>Upload Files</h1>
+      <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data" class="upload-form">
+        <input type="file" name="file" required>
+        <button type="submit"><i data-lucide="upload-cloud"></i> Upload</button>
+      </form>
+
+      {% if uploaded_file %}
+        <p>Uploaded: <strong>{{ uploaded_file }}</strong></p>
+      {% endif %}
+    </main>
+  </div>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

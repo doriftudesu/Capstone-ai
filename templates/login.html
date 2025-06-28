@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login | WebApp</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</head>
+<body class="auth-page">
+ <div class="auth-container">
+  <h2>Login</h2>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+   {% if messages %}
+    {% for category, message in messages %}
+     <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+   {% endif %}
+  {% endwith %}
+  <form method="POST" action="{{ url_for('login') }}">
+   <input type="text" name="username" placeholder="Username" required />
+   <input type="password" name="password" placeholder="Password" required />
+
+      <!-- ADDED: Keep me logged in checkbox -->
+      <div style="text-align: left; margin-top: -0.5rem; margin-bottom: 0.5rem;">
+          <input type="checkbox" name="remember" id="remember_me" style="margin-right: 0.5rem; vertical-align: middle;">
+          <label for="remember_me" style="font-size: 0.9em;">Keep me logged in</label>
+      </div>
+      <!-- END ADDED -->
+
+   <button type="submit">Login</button>
+  </form>
+  <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+ </div>
+</body>
+</html>

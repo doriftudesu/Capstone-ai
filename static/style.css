@@ -1,74 +1,197 @@
+/* === ROOT VARIABLES (DEFAULT - DARK THEME) === */
 :root {
-  --bg-dark: #2C3E50;
-  --hover-dark: #34495E;
-  --text-dark: #ffffff;
-  --bg-light: #ECF0F1;
-  --hover-light: #BDC3C7;
-  --text-light: #000000;
+    --primary: #1e1e2f; /* Dark Blue/Purple for main elements, original sidebar */
+    --hover: #292940;
+    --text: #ffffff;
+    --bg: #121218; /* Background for main body */
+    --accent: #00ffa1;
+
+    /* Variables specifically for Auth/Card backgrounds */
+    --background: var(--bg); /* General background for pages */
+    --card-bg: #1e1e1e; /* Background for auth containers/cards */
+    --input-bg: #2c2c2c; /* Background for input fields */
+    --text-color: var(--text); /* General text color */
+    --placeholder: #888;
+    --primary-dark: #169f46; /* Used in auth buttons hover, perhaps re-evaluate this if it conflicts with --primary */
 }
 
+/* === LIGHT THEME OVERRIDES === */
+body.light {
+    --primary: #0077ff; /* Primary color in light mode */
+    --primary-dark: #005ecc; /* Darker primary for hover in light mode */
+    --background: #f4f4f4; /* Background for light mode pages */
+    --card-bg: #ffffff; /* Card background in light mode */
+    --input-bg: #eeeeee; /* Input background in light mode */
+    --text-color: #000000; /* Text color in light mode */
+    --placeholder: #666;
+
+    /* Update general theme variables for light mode if they are still used by other selectors */
+    --bg: var(--background);
+    --text: var(--text-color);
+    --hover: #e0e0e0; /* Example: a lighter hover for light theme */
+    --accent: #0056b3; /* Example: a darker accent for light theme */
+}
+
+
 body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: var(--bg-dark);
-  color: var(--text-dark);
-  display: flex;
-  overflow-x: hidden;
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    background-color: var(--bg); /* Uses --bg from :root or body.light */
+    color: var(--text); /* Uses --text from :root or body.light */
+    transition: background-color 0.3s, color 0.3s;
 }
 
 #sidebar {
-  width: 240px;
-  background-color: var(--bg-dark);
-  display: flex;
-  flex-direction: column;
-  transition: width 0.3s ease;
+    width: 240px;
+    min-height: 100vh;
+    background-color: var(--primary); /* Uses --primary from :root or body.light */
+    color: var(--text); /* Uses --text from :root or body.light */
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s;
 }
 
 #sidebar.collapsed {
-  width: 60px;
+    width: 70px;
+}
+
+#logo-container {
+    padding: 16px;
+    text-align: center;
+}
+
+#logo {
+    max-width: 100%;
+    height: 40px;
+    /* Ensure the image itself is visible. Check its source in HTML */
 }
 
 .menu-btn {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  cursor: pointer;
-  white-space: nowrap;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    transition: background-color 0.2s;
 }
 
 .menu-btn:hover {
-  background-color: var(--hover-dark);
+    background-color: var(--hover);
 }
 
-.submenu {
-  display: none;
-  flex-direction: column;
-  margin-left: 20px;
+.icon {
+    width: 24px;
+    text-align: center;
+    font-size: 18px;
+    margin-right: 12px;
 }
 
-.submenu .menu-btn {
-  font-size: 14px;
+.label {
+    transition: opacity 0.3s ease;
+}
+
+#sidebar.collapsed .label {
+    display: none;
+}
+
+.avatar {
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    margin-right: 12px;
 }
 
 #main {
-  flex-grow: 1;
-  padding: 20px;
-  background-color: var(--bg-dark);
-  color: var(--text-dark);
-  transition: margin-left 0.3s ease;
+    flex: 1;
+    padding: 24px;
+    transition: margin-left 0.3s;
+    margin-left: 240px;
+    background-color: var(--background); /* Added this to ensure main content area uses the correct background var */
+    color: var(--text-color); /* Added this for consistency */
 }
 
-.toggle-theme, .toggle-sidebar {
-  margin-top: auto;
-  text-align: center;
-  padding: 10px;
-  cursor: pointer;
-  background-color: transparent;
-  border: none;
-  color: var(--text-dark);
-  font-weight: bold;
+#sidebar.collapsed ~ #main {
+    margin-left: 70px;
 }
 
-.toggle-sidebar {
-  font-size: 20px;
+#dropzone {
+    padding: 40px;
+    border: 2px dashed var(--accent);
+    border-radius: 6px;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.02);
+    margin-bottom: 16px;
 }
+
+#dropzone.hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+/* === AUTH PAGES === */
+.auth-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: var(--background); /* Uses --background from :root or body.light */
+    color: var(--text-color); /* Uses --text-color from :root or body.light */
+    font-family: 'Segoe UI', sans-serif;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.auth-container {
+    background: var(--card-bg); /* Uses --card-bg from :root or body.light */
+    padding: 2rem 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.25);
+    width: 100%;
+    max-width: 400px;
+}
+
+.auth-container h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-size: 1.75rem;
+}
+
+.auth-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.auth-container input[type="text"],
+.auth-container input[type="password"] {
+    padding: 0.75rem;
+    border: none;
+    border-radius: 8px;
+    background: var(--input-bg); /* Uses --input-bg from :root or body.light */
+    color: var(--text-color); /* Uses --text-color from :root or body.light */
+    font-size: 1rem;
+    outline: none;
+}
+
+.auth-container input::placeholder {
+    color: var(--placeholder);
+}
+
+.auth-container button {
+    padding: 0.75rem;
+    background: var(--primary); /* Uses --primary from :root or body.light */
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.auth-container button:hover {
+    background: var(--primary-dark); /* Uses --primary-dark from :root or body.light

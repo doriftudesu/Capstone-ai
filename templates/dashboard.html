@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css')}}">
+  
+</head>
+<body>
+  <div class="container">
+    <aside id="sidebar" class="expanded">
+      <div class="logo">
+        <img src="{{ url_for('static', filename='logo.png')}}" alt="App Logo">
+      </div>
+      <nav>
+        <ul>
+          <li onclick="loadPage('home')"><i data-lucide="home"></i><span>Home</span></li>
+          <li onclick="loadPage('dashboard')" class="active"><i data-lucide="bar-chart"></i><span>Dashboard</span></li>
+          <li onclick="loadPage('upload')"><i data-lucide="upload"></i><span>Upload</span></li>
+        </ul>
+      </nav>
+      <button onclick="toggleSidebar()" class="sidebar-toggle"><i data-lucide="chevrons-left"></i></button>
+      <button onclick="toggleTheme()" class="theme-toggle"><i data-lucide="moon"></i></button>
+    </aside>
+
+    <main id="main">
+      <h1>Dashboard</h1>
+      <div class="dashboard-widgets">
+        <div class="card">
+          <h2>Total Users</h2>
+          <p>1,024</p>
+        </div>
+        <div class="card">
+          <h2>Active Sessions</h2>
+          <p>87</p>
+        </div>
+        <div class="card">
+          <h2>Storage Used</h2>
+          <p>3.2 GB / 10 GB</p>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script>lucide.createIcons();</script>
+  <script>('unload', function(event) {
+    // Check if the browser supports navigator.sendBeacon, which is preferred for non-blocking requests on unload.
+    if (navigator.sendBeacon) {
+        // Use sendBeacon to send a POST request to the logout endpoint.
+        // This is a "fire-and-forget" request that the browser tries to send in the background.
+        // We use a direct path "/logout" as this static file doesn't process Jinja2 like templates.
+        navigator.sendBeacon("/logout");
+        console.log("Logout beacon sent."); // Log to console for debugging purposes
+    } else {
+        // Fallback for older browsers that do not support sendBeacon.
+        // A synchronous XMLHttpRequest is used, which will block the page unload.
+        // While effective, it can cause a slight delay in page closure.
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/logout", false); // 'false' makes the request synchronous
+        xhr.send();
+        console.log("Synchronous XHR logout sent (fallback)."); // Log to console for debugging
+    }
+});</script>
+</body>
+</html>
