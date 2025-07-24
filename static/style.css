@@ -1,197 +1,392 @@
-/* === ROOT VARIABLES (DEFAULT - DARK THEME) === */
-:root {
-    --primary: #1e1e2f; /* Dark Blue/Purple for main elements, original sidebar */
-    --hover: #292940;
-    --text: #ffffff;
-    --bg: #121218; /* Background for main body */
-    --accent: #00ffa1;
-
-    /* Variables specifically for Auth/Card backgrounds */
-    --background: var(--bg); /* General background for pages */
-    --card-bg: #1e1e1e; /* Background for auth containers/cards */
-    --input-bg: #2c2c2c; /* Background for input fields */
-    --text-color: var(--text); /* General text color */
-    --placeholder: #888;
-    --primary-dark: #169f46; /* Used in auth buttons hover, perhaps re-evaluate this if it conflicts with --primary */
+/* General Body and HTML Reset */
+:root { /* Default Theme Variables (now representing Dark Theme) */
+    --primary-color: #66BB6A; /* Green */
+    --secondary-color: #81C784; /* Light Green */
+    --accent-color: #FFCA28; /* Amber */
+    --text-color: #e0e0e0; /* Light text for dark background */
+    --background-color: #2c3e50; /* Dark blue-gray background */
+    --card-background: #34495e; /* Slightly lighter dark blue-gray for cards */
+    --border-color: #4a657c;
+    --shadow-light: rgba(0, 0, 0, 0.2); /* Darker shadow for dark theme */
+    --flash-success: #4CAF50;
+    --flash-danger: #F44336;
+    --flash-info: #2196F3;
+    --flash-text: #fff;
 }
 
-/* === LIGHT THEME OVERRIDES === */
-body.light {
-    --primary: #0077ff; /* Primary color in light mode */
-    --primary-dark: #005ecc; /* Darker primary for hover in light mode */
-    --background: #f4f4f4; /* Background for light mode pages */
-    --card-bg: #ffffff; /* Card background in light mode */
-    --input-bg: #eeeeee; /* Input background in light mode */
-    --text-color: #000000; /* Text color in light mode */
-    --placeholder: #666;
-
-    /* Update general theme variables for light mode if they are still used by other selectors */
-    --bg: var(--background);
-    --text: var(--text-color);
-    --hover: #e0e0e0; /* Example: a lighter hover for light theme */
-    --accent: #0056b3; /* Example: a darker accent for light theme */
+body.light { /* Light Theme Overrides */
+    --primary-color: #4A90E2; /* Blue */
+    --secondary-color: #50E3C2; /* Teal */
+    --accent-color: #F5A623; /* Orange */
+    --text-color: #333; /* Dark text for light background */
+    --background-color: #f4f7f6; /* Light background */
+    --card-background: #ffffff; /* White for cards */
+    --border-color: #e0e0e0;
+    --shadow-light: rgba(0, 0, 0, 0.05); /* Lighter shadow for light theme */
 }
 
-
-body {
+* {
     margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    display: flex;
-    background-color: var(--bg); /* Uses --bg from :root or body.light */
-    color: var(--text); /* Uses --text from :root or body.light */
-    transition: background-color 0.3s, color 0.3s;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-#sidebar {
-    width: 240px;
-    min-height: 100vh;
-    background-color: var(--primary); /* Uses --primary from :root or body.light */
-    color: var(--text); /* Uses --text from :root or body.light */
+html, body {
+    height: 100%;
+    font-family: "Inter", sans-serif;
+    color: var(--text-color);
+    background-color: var(--background-color);
+    line-height: 1.6;
     display: flex;
     flex-direction: column;
-    transition: width 0.3s;
+    transition: background-color 0.5s ease, color 0.5s ease; /* Smooth transition for theme change */
 }
 
-#sidebar.collapsed {
-    width: 70px;
-}
-
-#logo-container {
-    padding: 16px;
-    text-align: center;
-}
-
-#logo {
-    max-width: 100%;
-    height: 40px;
-    /* Ensure the image itself is visible. Check its source in HTML */
-}
-
-.menu-btn {
-    padding: 15px;
-    display: flex;
-    align-items: center;
-    cursor: pointer;
+/* Global Styles */
+a {
+    color: var(--primary-color);
     text-decoration: none;
-    color: inherit;
-    transition: background-color 0.2s;
+    transition: color 0.3s ease;
 }
 
-.menu-btn:hover {
-    background-color: var(--hover);
+a:hover {
+    color: var(--accent-color);
 }
 
-.icon {
-    width: 24px;
+button {
+    cursor: pointer;
+    border: none;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px var(--shadow-light);
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Header */
+header {
+    background-color: var(--card-background);
+    color: var(--text-color);
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 4px var(--shadow-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.5s ease, border-color 0.5s ease; /* Smooth transition */
+}
+
+header h1 {
+    font-size: 1.8em;
+    margin: 0;
+    color: var(--primary-color);
+    transition: color 0.5s ease; /* Smooth transition */
+}
+
+header nav a {
+    margin-left: 1.5rem;
+    font-weight: 500;
+    color: var(--text-color);
+    padding: 0.5rem 0;
+    position: relative;
+    transition: color 0.5s ease; /* Smooth transition */
+}
+
+header nav a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: var(--primary-color);
+    transition: width 0.3s ease, background-color 0.5s ease; /* Smooth transition */
+}
+
+header nav a:hover::after {
+    width: 100%;
+}
+
+/* Main Content Area */
+main {
+    flex-grow: 1;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 2rem auto;
+    background-color: var(--card-background);
+    border-radius: 12px;
+    box-shadow: 0 6px 12px var(--shadow-light);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease; /* Smooth transition */
+}
+
+main h2 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.5rem;
+    transition: color 0.5s ease, border-color 0.5s ease; /* Smooth transition */
+}
+
+/* Flash Messages */
+.flashes {
+    margin-bottom: 1.5rem;
+}
+
+.flash {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    font-weight: bold;
+    color: var(--flash-text);
     text-align: center;
-    font-size: 18px;
-    margin-right: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.label {
-    transition: opacity 0.3s ease;
+.flash.success {
+    background-color: var(--flash-success);
 }
 
-#sidebar.collapsed .label {
-    display: none;
+.flash.danger {
+    background-color: var(--flash-danger);
 }
 
-.avatar {
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    margin-right: 12px;
+.flash.info {
+    background-color: var(--flash-info);
 }
 
-#main {
-    flex: 1;
-    padding: 24px;
-    transition: margin-left 0.3s;
-    margin-left: 240px;
-    background-color: var(--background); /* Added this to ensure main content area uses the correct background var */
-    color: var(--text-color); /* Added this for consistency */
+/* Form Styles (for login, register, upload) */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
 }
 
-#sidebar.collapsed ~ #main {
-    margin-left: 70px;
+form input[type="text"],
+form input[type="password"],
+form input[type="email"],
+form input[type="file"] {
+    padding: 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1em;
+    background-color: var(--background-color); /* Lighter background for input */
+    color: var(--text-color);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.5s ease, color 0.5s ease; /* Smooth transition */
 }
 
-#dropzone {
-    padding: 40px;
-    border: 2px dashed var(--accent);
-    border-radius: 6px;
-    text-align: center;
-    background-color: rgba(255, 255, 255, 0.02);
-    margin-bottom: 16px;
+form input[type="text"]:focus,
+form input[type="password"]:focus,
+form input[type="email"]:focus,
+form input[type="file"]:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+    outline: none;
 }
 
-#dropzone.hover {
-    background-color: rgba(255, 255, 255, 0.08);
+form button[type="submit"] {
+    background-color: var(--primary-color);
+    color: white;
+    width: 100%;
+    padding: 1rem;
 }
 
-canvas {
-    max-width: 100%;
-    height: auto;
+form button[type="submit"]:hover {
+    background-color: var(--accent-color);
 }
 
-/* === AUTH PAGES === */
+/* Auth Pages (Login/Register specific) */
 .auth-page {
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: var(--background); /* Uses --background from :root or body.light */
-    color: var(--text-color); /* Uses --text-color from :root or body.light */
-    font-family: 'Segoe UI', sans-serif;
-    transition: background 0.3s ease, color 0.3s ease;
+    background-color: var(--background-color);
+    transition: background-color 0.5s ease; /* Smooth transition */
 }
 
 .auth-container {
-    background: var(--card-bg); /* Uses --card-bg from :root or body.light */
-    padding: 2rem 2.5rem;
-    border-radius: 16px;
-    box-shadow: 0 0 12px rgba(0,0,0,0.25);
+    background-color: var(--card-background);
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px var(--shadow-light);
+    text-align: center;
     width: 100%;
     max-width: 400px;
+    border: 1px solid var(--border-color);
+    transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease; /* Smooth transition */
 }
 
 .auth-container h2 {
-    text-align: center;
+    color: var(--primary-color);
     margin-bottom: 1.5rem;
-    font-size: 1.75rem;
+    font-size: 2em;
+    transition: color 0.5s ease; /* Smooth transition */
 }
 
-.auth-container form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+.auth-container p {
+    margin-top: 1.5rem;
+    font-size: 0.9em;
 }
 
-.auth-container input[type="text"],
-.auth-container input[type="password"] {
-    padding: 0.75rem;
-    border: none;
-    border-radius: 8px;
-    background: var(--input-bg); /* Uses --input-bg from :root or body.light */
-    color: var(--text-color); /* Uses --text-color from :root or body.light */
-    font-size: 1rem;
-    outline: none;
+/* Upload Page Specific */
+.upload-container {
+    text-align: center;
 }
 
-.auth-container input::placeholder {
-    color: var(--placeholder);
-}
-
-.auth-container button {
-    padding: 0.75rem;
-    background: var(--primary); /* Uses --primary from :root or body.light */
-    border: none;
-    border-radius: 8px;
-    color: white;
-    font-weight: bold;
+.dropzone {
+    border: 2px dashed var(--primary-color);
+    border-radius: 12px;
+    padding: 3rem;
+    margin-top: 1.5rem;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    background-color: rgba(74, 144, 226, 0.05); /* Light blue tint for light theme */
+    transition: background-color 0.5s ease, border-color 0.5s ease; /* Smooth transition */
 }
 
-.auth-container button:hover {
-    background: var(--primary-dark); /* Uses --primary-dark from :root or body.light
+body.dark .dropzone { /* Dark theme specific styling for dropzone */
+    background-color: rgba(102, 187, 106, 0.1); /* Green tint for dark theme */
+}
+
+
+.dropzone.hover {
+    background-color: rgba(74, 144, 226, 0.1);
+    border-color: var(--accent-color);
+}
+
+.dropzone p {
+    font-size: 1.2em;
+    color: var(--primary-color);
+    font-weight: bold;
+    transition: color 0.5s ease; /* Smooth transition */
+}
+
+.dropzone input[type="file"] {
+    display: none;
+}
+
+/* Chart Container */
+.chart-container {
+    padding: 1.5rem;
+    background-color: var(--background-color);
+    border-radius: 12px;
+    box-shadow: inset 0 2px 4px var(--shadow-light);
+    border: 1px solid var(--border-color);
+    transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease; /* Smooth transition */
+}
+
+/* Notifications */
+.notifications {
+    background-color: var(--background-color);
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: inset 0 2px 4px var(--shadow-light);
+    border: 1px solid var(--border-color);
+    transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease; /* Smooth transition */
+}
+
+.notifications h3 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.3em;
+    transition: color 0.5s ease; /* Smooth transition */
+}
+
+.notifications ul {
+    list-style: none;
+    padding: 0;
+}
+
+.notifications li {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    padding: 0.8rem;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px var(--shadow-light);
+    transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease; /* Smooth transition */
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 1.5rem;
+    margin-top: 2rem;
+    background-color: var(--card-background);
+    color: var(--text-color);
+    box-shadow: 0 -2px 4px var(--shadow-light);
+    border-top: 1px solid var(--border-color);
+    transition: background-color 0.5s ease, border-color 0.5s ease, color 0.5s ease, box-shadow 0.5s ease; /* Smooth transition */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        text-align: center;
+        padding: 1rem;
+    }
+
+    header nav {
+        margin-top: 1rem;
+    }
+
+    header nav a {
+        margin: 0 0.5rem;
+        display: inline-block;
+    }
+
+    main {
+        padding: 1rem;
+        margin: 1rem auto;
+        border-radius: 8px;
+        gap: 1.5rem;
+    }
+
+    .auth-container {
+        padding: 1.5rem;
+        border-radius: 8px;
+    }
+
+    form input,
+    form button {
+        padding: 0.75rem;
+    }
+
+    .dropzone {
+        padding: 2rem;
+    }
+
+    .dropzone p {
+        font-size: 1em;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.5em;
+    }
+
+    header nav a {
+        font-size: 0.9em;
+    }
+
+    .auth-container h2 {
+        font-size: 1.8em;
+    }
+
+    form {
+        gap: 0.75rem;
+    }
+}

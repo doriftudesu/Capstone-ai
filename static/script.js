@@ -1,29 +1,14 @@
 // This file contains general JavaScript for your web application.
 
-// --- JavaScript for tab close logout ---
-// This event listener attempts to log out the user when the page is unloaded (e.g., tab closed, navigated away).
-// It's a best-effort approach as browsers might not always send the request reliably in all scenarios (like crashes).
-window.addEventListener('unload', function(event) {
-    // Check if the browser supports navigator.sendBeacon, which is preferred for non-blocking requests on unload.
-    if (navigator.sendBeacon) {
-        // Use sendBeacon to send a POST request to the logout endpoint.
-        // This is a "fire-and-forget" request that the browser tries to send in the background.
-        // We use a direct path "/logout" as this static file doesn't process Jinja2 like templates.
-        navigator.sendBeacon("/logout");
-        console.log("Logout beacon sent."); // Log to console for debugging purposes
-    } else {
-        // Fallback for older browsers that do not support sendBeacon.
-        // A synchronous XMLHttpRequest is used, which will block the page unload.
-        // While effective, it can cause a slight delay in page closure.
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/logout", false); // 'false' makes the request synchronous
-        xhr.send();
-        console.log("Synchronous XHR logout sent (fallback)."); // Log to console for debugging
-    }
-});
-// --- End JavaScript for tab close logout ---
+// --- Removed: JavaScript for tab close logout ---
+// The unload event listener has been removed as it was causing unintended logouts
+// on internal navigation within the application.
+// Session management for browser close is handled by Flask's SESSION_COOKIE_PERMANENT=False
+// and long-term persistence by Flask-Login's "Remember Me" cookie.
+// --- End Removed ---
 
-// --- Sidebar toggle logic ---
+// --- Sidebar toggle logic (assuming sidebar and logo elements exist in HTML) ---
+// These elements are not in the provided HTML, but the JS functions are kept for completeness.
 const sidebar = document.getElementById('sidebar');
 const logo = document.getElementById('logo');
 
@@ -53,7 +38,7 @@ function loadTheme() {
     }
 }
 
-// --- Navigation page loader ---
+// --- Navigation page loader (example for client-side navigation if needed) ---
 function loadPage(page) {
     if (page === 'dashboard') {
         window.location.href = '/';
@@ -62,7 +47,7 @@ function loadPage(page) {
     }
 }
 
-// --- Drag and drop upload support ---
+// --- Drag and drop upload support (assuming dropzone and fileInput elements exist in HTML) ---
 const dz = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');
 
@@ -104,7 +89,7 @@ function setupSocket() {
         const notificationList = document.getElementById('notification-list');
         if (notificationList) {
             const listItem = document.createElement('li');
-            listItem.textContent = `New file uploaded: ${data.filename}`;
+            listItem.textContent = `New file uploaded: ${data.filename} by ${data.user}`;
             notificationList.appendChild(listItem);
         } else {
             console.warn("Notification list (id='notification-list') not found.");
@@ -154,4 +139,3 @@ window.onload = () => {
     setupSocket(); // Initialize Socket.IO for real-time notifications
     setupCharts(); // Initialize Chart.js for data visualization
 };
-

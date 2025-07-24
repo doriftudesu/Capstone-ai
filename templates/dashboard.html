@@ -1,65 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Dashboard</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css')}}">
-  
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | WebApp</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 <body>
-  <div class="container">
-    <aside id="sidebar" class="expanded">
-      <div class="logo">
-        <img src="{{ url_for('static', filename='logo.png')}}" alt="App Logo">
-      </div>
-      <nav>
-        <ul>
-          <li onclick="loadPage('home')"><i data-lucide="home"></i><span>Home</span></li>
-          <li onclick="loadPage('dashboard')" class="active"><i data-lucide="bar-chart"></i><span>Dashboard</span></li>
-          <li onclick="loadPage('upload')"><i data-lucide="upload"></i><span>Upload</span></li>
-        </ul>
-      </nav>
-      <button onclick="toggleSidebar()" class="sidebar-toggle"><i data-lucide="chevrons-left"></i></button>
-      <button onclick="toggleTheme()" class="theme-toggle"><i data-lucide="moon"></i></button>
-    </aside>
+    <header>
+        <h1>Welcome, {{ username }}!</h1>
+        <nav>
+            <a href="{{ url_for('home') }}">Dashboard</a>
+            <a href="{{ url_for('upload') }}">Upload File</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+            <!-- ADDED: Theme Toggle Button -->
+            <button onclick="toggleTheme()" style="margin-left: 1.5rem; padding: 0.5rem 1rem; background-color: var(--secondary-color); color: white; border-radius: 5px;">Toggle Theme</button>
+        </nav>
+    </header>
 
-    <main id="main">
-      <h1>Dashboard</h1>
-      <div class="dashboard-widgets">
-        <div class="card">
-          <h2>Total Users</h2>
-          <p>1,024</p>
-        </div>
-        <div class="card">
-          <h2>Active Sessions</h2>
-          <p>87</p>
-        </div>
-        <div class="card">
-          <h2>Storage Used</h2>
-          <p>3.2 GB / 10 GB</p>
-        </div>
-      </div>
+    <main>
+        <section class="flashes">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </section>
+
+        <!-- Dashboard Welcome Section -->
+        <section class="dashboard-welcome-card">
+            <h2>Your Dashboard Overview</h2>
+            <p>Here you can see a summary of your activities and important information.</p>
+        </section>
+
+        <!-- Chart Container -->
+        <section class="chart-container">
+            <h2>Activity Chart</h2>
+            <canvas id="myChart"></canvas>
+        </section>
+
+        <!-- Notifications Section -->
+        <section class="notifications">
+            <h2>Recent Notifications</h2>
+            <ul id="notification-list">
+                <!-- Notifications will be dynamically added here by script.js -->
+                <li>Welcome to your dashboard!</li>
+            </ul>
+        </section>
     </main>
-  </div>
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
-  <script>lucide.createIcons();</script>
-  <script>('unload', function(event) {
-    // Check if the browser supports navigator.sendBeacon, which is preferred for non-blocking requests on unload.
-    if (navigator.sendBeacon) {
-        // Use sendBeacon to send a POST request to the logout endpoint.
-        // This is a "fire-and-forget" request that the browser tries to send in the background.
-        // We use a direct path "/logout" as this static file doesn't process Jinja2 like templates.
-        navigator.sendBeacon("/logout");
-        console.log("Logout beacon sent."); // Log to console for debugging purposes
-    } else {
-        // Fallback for older browsers that do not support sendBeacon.
-        // A synchronous XMLHttpRequest is used, which will block the page unload.
-        // While effective, it can cause a slight delay in page closure.
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/logout", false); // 'false' makes the request synchronous
-        xhr.send();
-        console.log("Synchronous XHR logout sent (fallback)."); // Log to console for debugging
-    }
-});</script>
+
+    <footer>
+        <p>&copy; 2023 Your WebApp</p>
+    </footer>
 </body>
 </html>
