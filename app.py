@@ -178,7 +178,8 @@ def upload():
         else:
             flash("Invalid file type. Allowed types: " + ", ".join(ALLOWED_EXTENSIONS), "danger")
     
-    return render_template("upload.html")
+    # MODIFIED: Pass username to the template
+    return render_template("upload.html", username=current_user.username)
 
 @app.route("/chart_data")
 @login_required
@@ -272,7 +273,6 @@ def register():
     return render_template("register.html")
 
 @app.route("/logout", methods=["GET", "POST"])
-# REMOVED: @login_required decorator here
 def logout():
     """Handles user logout and clears session/cookies."""
     # It's good practice to get username before logout_user() clears current_user
