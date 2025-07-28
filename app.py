@@ -10,6 +10,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import os
 from datetime import timedelta
+import requests # NEW: Import requests for making HTTP calls to external APIs
 
 print("DEBUG: All imports successful (2).")
 
@@ -50,6 +51,9 @@ app.config.update(
     REMEMBER_COOKIE_SECURE=False,                # Set to True in production (requires HTTPS)
     REMEMBER_COOKIE_DOMAIN='127.0.0.1',          # Keeping explicit for remember_token
     REMEMBER_COOKIE_PATH='/',                    # Cookie valid for all paths
+
+    # NEW: Google Books API Configuration
+    GOOGLE_BOOKS_API_KEY="", # OPTIONAL: Get an API key from Google Cloud Console if needed for higher quotas
 )
 
 # Allowed file extensions for uploads
@@ -78,11 +82,12 @@ print("DEBUG: LoginManager initialized (7).")
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
-    # 'password' column is kept for potential backward compatibility (can be removed after migration)
     password = db.Column(db.String(150), nullable=True) 
-    # 'password_hash' stores the securely hashed password
     password_hash = db.Column(db.String(255), nullable=True) 
     avatar = db.Column(db.String(150), default="default_avatar.png")
+    
+    # Relationship to Book model
+    books = db.relationship('Book', backref='owner', lazy=True)
     
     def set_password(self, password):
         """Hashes the given password and stores it."""
@@ -102,6 +107,19 @@ class User(db.Model, UserMixin):
         return False
 
 print("DEBUG: User model defined (8).")
+
+# --- Book Model ---
+class Book(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    author = db.Column(db.String(255), nullable=True)
+    isbn = db.Column(db.String(20), nullable=True) # NEW: ISBN for unique identification
+    cover_image_url = db.Column(db.String(500), nullable=True) # NEW: URL for book cover
+    # Foreign Key to link book to a user
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+print("DEBUG: Book model defined.")
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -145,7 +163,9 @@ def debug_request_info():
 @login_required
 def home():
     """Renders the user's dashboard."""
-    return render_template("dashboard.html", username=current_user.username)
+    # MODIFIED: Fetch ALL books for the current user
+    user_books = Book.query.filter_by(user_id=current_user.id).order_by(Book.id.desc()).all()
+    return render_template("dashboard.html", username=current_user.username, books=user_books)
 
 @app.route("/upload", methods=["GET", "POST"])
 @login_required
@@ -178,7 +198,6 @@ def upload():
         else:
             flash("Invalid file type. Allowed types: " + ", ".join(ALLOWED_EXTENSIONS), "danger")
     
-    # MODIFIED: Pass username to the template
     return render_template("upload.html", username=current_user.username)
 
 @app.route("/chart_data")
@@ -275,19 +294,16 @@ def register():
 @app.route("/logout", methods=["GET", "POST"])
 def logout():
     """Handles user logout and clears session/cookies."""
-    # It's good practice to get username before logout_user() clears current_user
     username = current_user.username if current_user.is_authenticated else "Guest" 
     
-    logout_user() # Clear Flask-Login's session variables
-    session.clear() # Clear all other data in the Flask session
+    logout_user() 
+    session.clear() 
 
     response = make_response(redirect(url_for("login")))
     
-    # Explicitly clear cookies by setting their expiration to 0
     remember_cookie_name = app.config.get('REMEMBER_COOKIE_NAME', 'remember_token')
     session_cookie_name = app.config.get('SESSION_COOKIE_NAME', 'session')
     
-    # Set domain and path explicitly for cookie deletion to match creation
     response.set_cookie(remember_cookie_name, '', expires=0, 
                         domain=app.config.get('REMEMBER_COOKIE_DOMAIN'), 
                         path=app.config.get('REMEMBER_COOKIE_PATH', '/'))
@@ -298,6 +314,119 @@ def logout():
     print(f"DEBUG: User {username} logged out successfully.")
     flash("You have been logged out successfully.", "info")
     return response
+
+# --- Library Routes ---
+@app.route("/library", methods=["GET"])
+@login_required
+def library():
+    """Displays the user's personal book library."""
+    # Fetch all books owned by the current user
+    user_books = Book.query.filter_by(user_id=current_user.id).order_by(Book.id.desc()).all()
+    return render_template("library.html", username=current_user.username, books=user_books)
+
+@app.route("/add_book", methods=["POST"])
+@login_required
+def add_book():
+    """Handles adding a new book to the user's library."""
+    title = request.form.get("title", "").strip()
+    author = request.form.get("author", "").strip()
+    isbn = request.form.get("isbn", "").strip() # NEW: Get ISBN from form
+    cover_image_url = request.form.get("cover_image_url", "").strip() # NEW: Get cover image URL
+
+    if not title:
+        flash("Book title is required.", "danger")
+        return redirect(url_for('library'))
+    
+    # Check for duplicate ISBN if provided
+    if isbn and Book.query.filter_by(isbn=isbn, user_id=current_user.id).first():
+        flash(f"Book with ISBN '{isbn}' is already in your library.", "warning")
+        return redirect(url_for('library'))
+
+    # Create new book and associate with current user
+    new_book = Book(title=title, author=author, isbn=isbn, cover_image_url=cover_image_url, user_id=current_user.id)
+    db.session.add(new_book)
+    try:
+        db.session.commit()
+        flash(f"Book '{title}' added to your library!", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error adding book: {str(e)}", "danger")
+    
+    return redirect(url_for('library'))
+
+@app.route("/delete_book/<int:book_id>", methods=["POST"])
+@login_required
+def delete_book(book_id):
+    """Handles deleting a book from the user's library."""
+    # Fetch the book and ensure it belongs to the current user
+    book_to_delete = Book.query.filter_by(id=book_id, user_id=current_user.id).first()
+
+    if book_to_delete:
+        db.session.delete(book_to_delete)
+        try:
+            db.session.commit()
+            flash(f"Book '{book_to_delete.title}' deleted from your library.", "info")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error deleting book: {str(e)}", "danger")
+    else:
+        flash("Book not found or you don't have permission to delete it.", "danger")
+    
+    return redirect(url_for('library'))
+
+@app.route("/search_books", methods=["GET"])
+@login_required
+def search_books():
+    """Searches for books using the Google Books API."""
+    query = request.args.get("query", "").strip()
+    if not query:
+        return jsonify([]) # Return empty list if no query
+    
+    google_books_api_url = "https://www.googleapis.com/books/v1/volumes"
+    params = {
+        "q": query,
+        "maxResults": 10, # Limit results for performance
+        "key": app.config["GOOGLE_BOOKS_API_KEY"] # Use API key if provided
+    }
+
+    try:
+        response = requests.get(google_books_api_url, params=params)
+        response.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
+        data = response.json()
+        
+        books_found = []
+        for item in data.get("items", []):
+            volume_info = item.get("volumeInfo", {})
+            
+            title = volume_info.get("title", "No Title Available")
+            authors = volume_info.get("authors", ["Unknown Author"])
+            author_str = ", ".join(authors)
+            
+            isbn = None
+            for industry_id in volume_info.get("industryIdentifiers", []):
+                if industry_id.get("type") == "ISBN_13":
+                    isbn = industry_id.get("identifier")
+                    break
+                elif industry_id.get("type") == "ISBN_10":
+                    isbn = industry_id.get("identifier")
+            
+            cover_image_url = volume_info.get("imageLinks", {}).get("thumbnail")
+            
+            books_found.append({
+                "title": title,
+                "author": author_str,
+                "isbn": isbn,
+                "cover_image_url": cover_image_url
+            })
+        return jsonify(books_found)
+
+    except requests.exceptions.RequestException as e:
+        print(f"ERROR: Google Books API request failed: {e}")
+        return jsonify({"error": "Failed to fetch books from external API."}), 500
+    except Exception as e:
+        print(f"ERROR: An unexpected error occurred during book search: {e}")
+        return jsonify({"error": "An unexpected error occurred."}), 500
+
 
 # --- Error Handlers ---
 @app.errorhandler(404)
@@ -322,32 +451,48 @@ def too_large(error):
 def handle_connect():
     """Handles new SocketIO client connections."""
     if current_user.is_authenticated:
-        print(f'DEBUG: User {current_user.username} connected to SocketIO')
+        print(f'DEBUG: User {current_user.username} connected to Socket.IO')
         emit('status', {'msg': f'{current_user.username} has connected'})
 
 @socketio.on('disconnect')
 def handle_disconnect():
     """Handles SocketIO client disconnections."""
     if current_user.is_authenticated:
-        print(f'DEBUG: User {current_user.username} disconnected from SocketIO')
+        print(f'DEBUG: User {current_user.username} disconnected from Socket.IO')
 
 print("DEBUG: Routes and functions defined (9).")
 
 # --- Database Migration Helper ---
 def migrate_database():
-    """Adds password_hash column to existing User table if it doesn't exist.
-    This helps with transitioning from plain text passwords to hashed passwords."""
+    """Adds password_hash, isbn, and cover_image_url columns to existing tables if they don't exist."""
     try:
         with app.app_context():
-            # Check if password_hash column exists using PRAGMA
-            result = db.engine.execute("PRAGMA table_info(user)")
-            columns = [row[1] for row in result]
+            # Check if password_hash column exists in User table
+            user_columns_result = db.engine.execute("PRAGMA table_info(user)")
+            user_columns = [row[1] for row in user_columns_result]
             
-            if 'password_hash' not in columns:
-                print("DEBUG: Adding password_hash column to existing database...")
-                # Execute ALTER TABLE statement directly
+            if 'password_hash' not in user_columns:
+                print("DEBUG: Adding password_hash column to existing User table...")
                 db.engine.execute("ALTER TABLE user ADD COLUMN password_hash VARCHAR(255)")
                 print("DEBUG: password_hash column added successfully!")
+            
+            # Check if 'book' table exists and add new columns if missing
+            inspector = db.inspect(db.engine)
+            if not inspector.has_table("book"):
+                print("DEBUG: 'book' table does not exist. It will be created by db.create_all().")
+            else:
+                book_columns_result = db.engine.execute("PRAGMA table_info(book)")
+                book_columns = [row[1] for row in book_columns_result]
+                
+                if 'isbn' not in book_columns:
+                    print("DEBUG: Adding 'isbn' column to 'book' table...")
+                    db.engine.execute("ALTER TABLE book ADD COLUMN isbn VARCHAR(20)")
+                    print("DEBUG: 'isbn' column added successfully!")
+                
+                if 'cover_image_url' not in book_columns:
+                    print("DEBUG: Adding 'cover_image_url' column to 'book' table...")
+                    db.engine.execute("ALTER TABLE book ADD COLUMN cover_image_url VARCHAR(500)")
+                    print("DEBUG: 'cover_image_url' column added successfully!")
                 
     except Exception as e:
         print(f"DEBUG: Migration check failed: {e}")
@@ -358,11 +503,11 @@ if __name__ == "__main__":
     with app.app_context():
         print("DEBUG: Inside app context for db.create_all() (11).")
         
-        # First, add missing columns to existing database (e.g., password_hash)
+        # First, add missing columns to existing database (e.g., password_hash, isbn, cover_image_url)
         migrate_database()
         
         # Then create any missing tables (e.g., if database is new or tables are missing)
-        db.create_all()
+        db.create_all() # This will create the 'book' table if it doesn't exist
         print("DEBUG: Database tables checked/created (12).")
         
         # Create upload folder if it doesn't exist

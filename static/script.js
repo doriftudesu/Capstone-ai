@@ -1,30 +1,5 @@
 // This file contains general JavaScript for your web application.
 
-// --- Removed: JavaScript for tab close logout ---
-// The unload event listener has been removed as it was causing unintended logouts
-// on internal navigation within the application.
-// Session management for browser close is handled by Flask's SESSION_COOKIE_PERMANENT=False
-// and long-term persistence by Flask-Login's "Remember Me" cookie.
-// --- End Removed ---
-
-// --- Sidebar toggle logic (assuming sidebar and logo elements exist in HTML) ---
-// These elements are not in the provided HTML, but the JS functions are kept for completeness.
-const sidebar = document.getElementById('sidebar');
-const logo = document.getElementById('logo');
-
-function toggleSidebar() {
-    if (sidebar) { // Check if sidebar exists before toggling
-        sidebar.classList.toggle('collapsed');
-        if (logo) { // Check if logo exists
-            if (sidebar.classList.contains('collapsed')) {
-                logo.style.display = 'none';
-            } else {
-                logo.style.display = 'block';
-            }
-        }
-    }
-}
-
 // --- Theme toggle with persistence ---
 function toggleTheme() {
     const isLight = document.body.classList.toggle('light');
@@ -132,6 +107,105 @@ function setupCharts() {
         console.log("Chart canvas (id='myChart') not found, skipping chart setup.");
     }
 }
+
+// --- NEW: Book Search Functionality ---
+async function searchBooks() {
+    const query = document.getElementById('bookSearchQuery').value;
+    const searchResultsDiv = document.getElementById('searchResults');
+    const searchStatus = document.getElementById('searchStatus');
+
+    if (!query) {
+        searchResultsDiv.innerHTML = '';
+        searchStatus.textContent = "Please enter a search query.";
+        return;
+    }
+
+    searchStatus.textContent = "Searching...";
+    searchResultsDiv.innerHTML = ''; // Clear previous results
+
+    try {
+        const response = await fetch(`/search_books?query=${encodeURIComponent(query)}`);
+        const books = await response.json();
+
+        if (books.error) {
+            searchStatus.textContent = `Error: ${books.error}`;
+            return;
+        }
+
+        if (books.length === 0) {
+            searchStatus.textContent = "No books found. Try a different query.";
+            return;
+        }
+
+        searchStatus.textContent = ""; // Clear status message
+        books.forEach(book => {
+            const bookCard = document.createElement('div');
+            bookCard.classList.add('book-card');
+            bookCard.innerHTML = `
+                <img src="${book.cover_image_url || 'https://placehold.co/128x192/e0e0e0/333?text=No+Cover'}" alt="Cover of ${book.title}" class="book-cover" onerror="this.onerror=null;this.src='https://placehold.co/128x192/e0e0e0/333?text=No+Cover';">
+                <h4>${book.title}</h4>
+                <p>by ${book.author || 'Unknown'}</p>
+                ${book.isbn ? `<p class="book-isbn">ISBN: ${book.isbn}</p>` : ''}
+                <button class="add-from-search-button"
+                        data-title="${book.title}"
+                        data-author="${book.author || ''}"
+                        data-isbn="${book.isbn || ''}"
+                        data-cover-image-url="${book.cover_image_url || ''}">Add to Library</button>
+            `;
+            searchResultsDiv.appendChild(bookCard);
+        });
+
+        // Add event listeners to the new "Add to Library" buttons
+        document.querySelectorAll('.add-from-search-button').forEach(button => {
+            button.addEventListener('click', async (event) => {
+                const btn = event.target;
+                const title = btn.dataset.title;
+                const author = btn.dataset.author;
+                const isbn = btn.dataset.isbn;
+                const coverImage = btn.dataset.coverImageUrl;
+
+                // Send data to the Flask add_book endpoint
+                const formData = new FormData();
+                formData.append('title', title);
+                formData.append('author', author);
+                formData.append('isbn', isbn);
+                formData.append('cover_image_url', coverImage);
+
+                try {
+                    const response = await fetch('/add_book', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const responseText = await response.text(); // Get raw text to check for redirect
+                    
+                    // Flask's redirect will return an HTML response with a meta refresh or script redirect
+                    // We need to check if it's a redirect and follow it
+                    if (response.redirected) {
+                        window.location.href = response.url; // Follow the redirect
+                    } else {
+                        // If not redirected, something went wrong or it's a JSON error
+                        const result = JSON.parse(responseText); // Try parsing as JSON
+                        if (result.error) {
+                            alert(`Error adding book: ${result.error}`); // Use alert for direct error feedback
+                        } else {
+                            // This case should ideally not happen if Flask always redirects on success/failure
+                            alert("Book added successfully (but no redirect detected). Please refresh.");
+                            console.log(result);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error adding book from search:', error);
+                    alert('An error occurred while adding the book.');
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error('Error searching books:', error);
+        searchStatus.textContent = "Failed to search for books. Please try again.";
+    }
+}
+
 
 // --- On page load: Initialize all necessary functionalities ---
 window.onload = () => {

@@ -15,8 +15,8 @@
         <nav>
             <a href="{{ url_for('home') }}">Dashboard</a>
             <a href="{{ url_for('upload') }}">Upload File</a>
+            <a href="{{ url_for('library') }}">My Library</a>
             <a href="{{ url_for('logout') }}">Logout</a>
-            <!-- ADDED: Theme Toggle Button -->
             <button onclick="toggleTheme()" style="margin-left: 1.5rem; padding: 0.5rem 1rem; background-color: var(--secondary-color); color: white; border-radius: 5px;">Toggle Theme</button>
         </nav>
     </header>
@@ -38,6 +38,20 @@
             <p>Here you can see a summary of your activities and important information.</p>
         </section>
 
+        <!-- NEW: Last Added Book Section -->
+        <section class="last-book-section">
+            <h3>Last Added Book</h3>
+            {% if last_book %}
+                <div class="book-card">
+                    <h4>{{ last_book.title }}</h4>
+                    <p>by {{ last_book.author if last_book.author else 'Unknown' }}</p>
+                    <a href="{{ url_for('library') }}" class="button view-library-button">View All Books</a>
+                </div>
+            {% else %}
+                <p>No books added yet. <a href="{{ url_for('library') }}">Add your first book!</a></p>
+            {% endif %}
+        </section>
+
         <!-- Chart Container -->
         <section class="chart-container">
             <h2>Activity Chart</h2>
@@ -48,7 +62,6 @@
         <section class="notifications">
             <h2>Recent Notifications</h2>
             <ul id="notification-list">
-                <!-- Notifications will be dynamically added here by script.js -->
                 <li>Welcome to your dashboard!</li>
             </ul>
         </section>

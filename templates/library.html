@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Library | WebApp</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</head>
+<body>
+    <header>
+        <h1>Welcome, {{ username }}!</h1>
+        <nav>
+            <a href="{{ url_for('home') }}">Dashboard</a>
+            <a href="{{ url_for('upload') }}">Upload File</a>
+            <a href="{{ url_for('library') }}">My Library</a> <!-- Active link for library -->
+            <a href="{{ url_for('logout') }}">Logout</a>
+            <button onclick="toggleTheme()" style="margin-left: 1.5rem; padding: 0.5rem 1rem; background-color: var(--secondary-color); color: white; border-radius: 5px;">Toggle Theme</button>
+        </nav>
+    </header>
+
+    <main>
+        <section class="flashes">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </section>
+
+        <h2>My Book Library</h2>
+
+        <!-- NEW: Book Search Section -->
+        <section class="book-search-section">
+            <h3>Search for Books</h3>
+            <div class="search-form">
+                <input type="text" id="bookSearchQuery" placeholder="Search by title or author...">
+                <button onclick="searchBooks()">Search</button>
+            </div>
+            <div id="searchResults" class="book-cards-container">
+                <!-- Search results will be loaded here by JavaScript -->
+                <p id="searchStatus" style="text-align: center; color: var(--text-color); margin-top: 1rem;">Start typing to search for books!</p>
+            </div>
+        </section>
+
+        <!-- Form to Add New Books (Manual Entry - still available) -->
+        <section class="add-book-section">
+            <h3>Or Add Manually</h3>
+            <form action="{{ url_for('add_book') }}" method="post" class="add-book-form">
+                <input type="text" name="title" placeholder="Book Title" required>
+                <input type="text" name="author" placeholder="Author (Optional)">
+                <!-- Hidden inputs for ISBN and cover_image_url, will be populated by JS if adding from search -->
+                <input type="hidden" name="isbn" id="manualAddIsbn">
+                <input type="hidden" name="cover_image_url" id="manualAddCoverImage">
+                <button type="submit">Add Book</button>
+            </form>
+        </section>
+
+        <!-- List of Books in Your Library -->
+        <section class="book-list-section">
+            <h3>Your Books</h3>
+            {% if books %}
+                <div class="book-cards-container">
+                    {% for book in books %}
+                        <div class="book-card">
+                            {% if book.cover_image_url %}
+                                <img src="{{ book.cover_image_url }}" alt="Cover of {{ book.title }}" class="book-cover" onerror="this.onerror=null;this.src='https://placehold.co/128x192/e0e0e0/333?text=No+Cover';">
+                            {% else %}
+                                <img src="https://placehold.co/128x192/e0e0e0/333?text=No+Cover" alt="No Cover Available" class="book-cover">
+                            {% endif %}
+                            <h4>{{ book.title }}</h4>
+                            <p>by {{ book.author if book.author else 'Unknown' }}</p>
+                            {% if book.isbn %}<p class="book-isbn">ISBN: {{ book.isbn }}</p>{% endif %}
+                            <form action="{{ url_for('delete_book', book_id=book.id) }}" method="post" onsubmit="return confirm('Are you sure you want to delete this book?');">
+                                <button type="submit" class="delete-button">Delete</button>
+                            </form>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>You haven't added any books yet. Search for one above or add manually!</p>
+            {% endif %}
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 Your WebApp</p>
+    </footer>
+</body>
+</html>
