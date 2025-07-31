@@ -32,7 +32,7 @@
 
         <h2>My Book Library</h2>
 
-        <!-- NEW: Book Search Section -->
+        <!-- Book Search Section -->
         <section class="book-search-section">
             <h3>Search for Books</h3>
             <div class="search-form">
@@ -45,18 +45,7 @@
             </div>
         </section>
 
-        <!-- Form to Add New Books (Manual Entry - still available) -->
-        <section class="add-book-section">
-            <h3>Or Add Manually</h3>
-            <form action="{{ url_for('add_book') }}" method="post" class="add-book-form">
-                <input type="text" name="title" placeholder="Book Title" required>
-                <input type="text" name="author" placeholder="Author (Optional)">
-                <!-- Hidden inputs for ISBN and cover_image_url, will be populated by JS if adding from search -->
-                <input type="hidden" name="isbn" id="manualAddIsbn">
-                <input type="hidden" name="cover_image_url" id="manualAddCoverImage">
-                <button type="submit">Add Book</button>
-            </form>
-        </section>
+        <!-- REMOVED: Form to Add New Books (Manual Entry) -->
 
         <!-- List of Books in Your Library -->
         <section class="book-list-section">
@@ -80,7 +69,7 @@
                     {% endfor %}
                 </div>
             {% else %}
-                <p>You haven't added any books yet. Search for one above or add manually!</p>
+                <p>You haven't added any books yet. Search for one above!</p>
             {% endif %}
         </section>
     </main>

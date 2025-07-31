@@ -10,7 +10,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import os
 from datetime import timedelta
-import requests # NEW: Import requests for making HTTP calls to external APIs
+import requests
+from sqlalchemy import inspect
 
 print("DEBUG: All imports successful (2).")
 
@@ -25,6 +26,16 @@ else:
     with open(SECRET_KEY_FILE, 'w') as f:
         f.write(APP_SECRET_KEY)
     print(f"DEBUG: NEW SECRET_KEY generated and saved to {SECRET_KEY_FILE}.")
+
+# --- NEW: GOOGLE_BOOKS_API_KEY Management ---
+GOOGLE_BOOKS_API_KEY_FILE = 'google_books_api_key.txt'
+if os.path.exists(GOOGLE_BOOKS_API_KEY_FILE):
+    with open(GOOGLE_BOOKS_API_KEY_FILE, 'r') as f:
+        APP_GOOGLE_BOOKS_API_KEY = f.read().strip()
+    print(f"DEBUG: GOOGLE_BOOKS_API_KEY loaded from {GOOGLE_BOOKS_API_KEY_FILE}.")
+else:
+    APP_GOOGLE_BOOKS_API_KEY = "" # Default to empty string if file not found
+    print(f"DEBUG: '{GOOGLE_BOOKS_API_KEY_FILE}' not found. Using empty API key. Consider creating this file for higher API quotas.")
 
 # --- App Config ---
 app = Flask(__name__)
@@ -52,8 +63,8 @@ app.config.update(
     REMEMBER_COOKIE_DOMAIN='127.0.0.1',          # Keeping explicit for remember_token
     REMEMBER_COOKIE_PATH='/',                    # Cookie valid for all paths
 
-    # NEW: Google Books API Configuration
-    GOOGLE_BOOKS_API_KEY="", # OPTIONAL: Get an API key from Google Cloud Console if needed for higher quotas
+    # NEW: Google Books API Key from file
+    GOOGLE_BOOKS_API_KEY=APP_GOOGLE_BOOKS_API_KEY,
 )
 
 # Allowed file extensions for uploads
@@ -163,9 +174,9 @@ def debug_request_info():
 @login_required
 def home():
     """Renders the user's dashboard."""
-    # MODIFIED: Fetch ALL books for the current user
-    user_books = Book.query.filter_by(user_id=current_user.id).order_by(Book.id.desc()).all()
-    return render_template("dashboard.html", username=current_user.username, books=user_books)
+    # MODIFIED: Fetch ONLY the last added book for the current user
+    last_book = Book.query.filter_by(user_id=current_user.id).order_by(Book.id.desc()).first()
+    return render_template("dashboard.html", username=current_user.username, last_book=last_book)
 
 @app.route("/upload", methods=["GET", "POST"])
 @login_required
@@ -184,14 +195,12 @@ def upload():
         
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            # Prevent duplicate filenames by adding user ID prefix for uniqueness
             filename = f"{current_user.id}_{filename}"
             filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
             
             try:
                 file.save(filepath)
                 flash(f"File '{file.filename}' uploaded successfully!", "success")
-                # Emit SocketIO event for real-time notifications
                 socketio.emit("file_uploaded", {"filename": file.filename, "user": current_user.username})
             except Exception as e:
                 flash(f"Error uploading file: {str(e)}", "danger")
@@ -204,7 +213,6 @@ def upload():
 @login_required
 def chart_data():
     """Provides sample data for charts."""
-    # In a real application, this would fetch data from your database
     return jsonify({
         'labels': ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
         'values': [10, 20, 30, 25, 35, 40]
@@ -214,7 +222,6 @@ def chart_data():
 def login():
     """Handles user login."""
     if current_user.is_authenticated:
-        # If already authenticated, redirect to home to prevent re-logging in
         return redirect(url_for('home'))
 
     if request.method == "POST":
@@ -228,14 +235,13 @@ def login():
         user = User.query.filter_by(username=username).first()
         
         if user and user.check_password(password):
-            remember_me = bool(request.form.get('remember')) # Get value of "remember me" checkbox
-            login_user(user, remember=remember_me) # Log user in, setting persistent cookie if 'remember_me' is True
+            remember_me = bool(request.form.get('remember'))
+            login_user(user, remember=remember_me)
             
             print(f"DEBUG: Login successful for {user.username}. 'remember' passed to login_user: {remember_me}")
             
-            # Redirect to the 'next' page if provided, otherwise to home
             next_page = request.args.get('next')
-            if next_page and next_page.startswith('/'):  # Basic validation to prevent open redirects
+            if next_page and next_page.startswith('/'):
                 return redirect(next_page)
             return redirect(url_for("home"))
         else:
@@ -254,7 +260,6 @@ def register():
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
         
-        # Input validation
         if not username or not password:
             flash("Please provide both username and password", "danger")
             return render_template("register.html")
@@ -271,21 +276,19 @@ def register():
             flash("Passwords do not match", "danger")
             return render_template("register.html")
         
-        # Check if username already exists
         if User.query.filter_by(username=username).first():
             flash("Username already exists", "danger")
             return render_template("register.html")
         
         try:
-            # Create new user with hashed password
             user = User(username=username)
-            user.set_password(password) # Hash and set password
+            user.set_password(password)
             db.session.add(user)
             db.session.commit()
             flash("Account created successfully! Please log in.", "success")
             return redirect(url_for("login"))
         except Exception as e:
-            db.session.rollback() # Rollback changes on error
+            db.session.rollback()
             flash("Error creating account. Please try again.", "danger")
             print(f"DEBUG: Registration error: {str(e)}")
     
@@ -320,7 +323,6 @@ def logout():
 @login_required
 def library():
     """Displays the user's personal book library."""
-    # Fetch all books owned by the current user
     user_books = Book.query.filter_by(user_id=current_user.id).order_by(Book.id.desc()).all()
     return render_template("library.html", username=current_user.username, books=user_books)
 
@@ -330,19 +332,17 @@ def add_book():
     """Handles adding a new book to the user's library."""
     title = request.form.get("title", "").strip()
     author = request.form.get("author", "").strip()
-    isbn = request.form.get("isbn", "").strip() # NEW: Get ISBN from form
-    cover_image_url = request.form.get("cover_image_url", "").strip() # NEW: Get cover image URL
+    isbn = request.form.get("isbn", "").strip()
+    cover_image_url = request.form.get("cover_image_url", "").strip()
 
     if not title:
         flash("Book title is required.", "danger")
         return redirect(url_for('library'))
     
-    # Check for duplicate ISBN if provided
     if isbn and Book.query.filter_by(isbn=isbn, user_id=current_user.id).first():
         flash(f"Book with ISBN '{isbn}' is already in your library.", "warning")
         return redirect(url_for('library'))
 
-    # Create new book and associate with current user
     new_book = Book(title=title, author=author, isbn=isbn, cover_image_url=cover_image_url, user_id=current_user.id)
     db.session.add(new_book)
     try:
@@ -358,7 +358,6 @@ def add_book():
 @login_required
 def delete_book(book_id):
     """Handles deleting a book from the user's library."""
-    # Fetch the book and ensure it belongs to the current user
     book_to_delete = Book.query.filter_by(id=book_id, user_id=current_user.id).first()
 
     if book_to_delete:
@@ -380,18 +379,18 @@ def search_books():
     """Searches for books using the Google Books API."""
     query = request.args.get("query", "").strip()
     if not query:
-        return jsonify([]) # Return empty list if no query
+        return jsonify([])
     
     google_books_api_url = "https://www.googleapis.com/books/v1/volumes"
     params = {
         "q": query,
-        "maxResults": 10, # Limit results for performance
-        "key": app.config["GOOGLE_BOOKS_API_KEY"] # Use API key if provided
+        "maxResults": 10,
+        "key": app.config["GOOGLE_BOOKS_API_KEY"] # API key is now read from config
     }
 
     try:
         response = requests.get(google_books_api_url, params=params)
-        response.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
+        response.raise_for_status()
         data = response.json()
         
         books_found = []
@@ -437,7 +436,7 @@ def not_found_error(error):
 @app.errorhandler(500)
 def internal_error(error):
     """Custom 500 Internal Server Error handler."""
-    db.session.rollback() # Rollback any pending database changes
+    db.session.rollback()
     return render_template('500.html'), 500
 
 @app.errorhandler(413)
@@ -467,7 +466,6 @@ def migrate_database():
     """Adds password_hash, isbn, and cover_image_url columns to existing tables if they don't exist."""
     try:
         with app.app_context():
-            # Check if password_hash column exists in User table
             user_columns_result = db.engine.execute("PRAGMA table_info(user)")
             user_columns = [row[1] for row in user_columns_result]
             
@@ -476,8 +474,7 @@ def migrate_database():
                 db.engine.execute("ALTER TABLE user ADD COLUMN password_hash VARCHAR(255)")
                 print("DEBUG: password_hash column added successfully!")
             
-            # Check if 'book' table exists and add new columns if missing
-            inspector = db.inspect(db.engine)
+            inspector = inspect(db.engine)
             if not inspector.has_table("book"):
                 print("DEBUG: 'book' table does not exist. It will be created by db.create_all().")
             else:
@@ -503,14 +500,11 @@ if __name__ == "__main__":
     with app.app_context():
         print("DEBUG: Inside app context for db.create_all() (11).")
         
-        # First, add missing columns to existing database (e.g., password_hash, isbn, cover_image_url)
         migrate_database()
         
-        # Then create any missing tables (e.g., if database is new or tables are missing)
-        db.create_all() # This will create the 'book' table if it doesn't exist
+        db.create_all()
         print("DEBUG: Database tables checked/created (12).")
         
-        # Create upload folder if it doesn't exist
         if not os.path.exists(app.config["UPLOAD_FOLDER"]):
             os.makedirs(app.config["UPLOAD_FOLDER"])
             print(f"DEBUG: Upload folder '{app.config['UPLOAD_FOLDER']}' created (13).")
@@ -519,10 +513,9 @@ if __name__ == "__main__":
     
     print("DEBUG: Exited app context (14).")
     
-    # Run the Flask-SocketIO application
     socketio.run(app, 
                 debug=True, 
-                allow_unsafe_werkzeug=True, # Allows debugger to work with reloader
-                host='127.0.0.1',           # Listen on localhost
-                port=5000)                  # Listen on port 5000
+                allow_unsafe_werkzeug=True, 
+                host='127.0.0.1',           
+                port=5000)                  
     print("DEBUG: Flask-SocketIO server started (15).")
