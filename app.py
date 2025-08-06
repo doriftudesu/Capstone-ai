@@ -13,6 +13,16 @@ from datetime import timedelta
 import requests
 from sqlalchemy import inspect
 
+# NEW: Imports for OCR functionality
+import cv2
+from PIL import Image
+import pytesseract
+import easyocr
+import re
+import numpy as np
+import isbnlib
+import io # For handling image bytes in memory
+
 print("DEBUG: All imports successful (2).")
 
 # --- SECRET_KEY Management ---
@@ -27,7 +37,7 @@ else:
         f.write(APP_SECRET_KEY)
     print(f"DEBUG: NEW SECRET_KEY generated and saved to {SECRET_KEY_FILE}.")
 
-# --- NEW: GOOGLE_BOOKS_API_KEY Management ---
+# --- GOOGLE_BOOKS_API_KEY Management ---
 GOOGLE_BOOKS_API_KEY_FILE = 'google_books_api_key.txt'
 if os.path.exists(GOOGLE_BOOKS_API_KEY_FILE):
     with open(GOOGLE_BOOKS_API_KEY_FILE, 'r') as f:
@@ -63,16 +73,21 @@ app.config.update(
     REMEMBER_COOKIE_DOMAIN='127.0.0.1',          # Keeping explicit for remember_token
     REMEMBER_COOKIE_PATH='/',                    # Cookie valid for all paths
 
-    # NEW: Google Books API Key from file
     GOOGLE_BOOKS_API_KEY=APP_GOOGLE_BOOKS_API_KEY,
 )
 
 # Allowed file extensions for uploads
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'csv', 'xlsx', 'docx'}
+# NEW: Allowed image extensions for OCR
+ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'}
 
 def allowed_file(filename):
-    """Checks if a file's extension is allowed for upload."""
+    """Checks if a file's extension is allowed for general upload."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def allowed_image_file(filename):
+    """Checks if a file's extension is allowed for image OCR upload."""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
 
 print("DEBUG: App configuration loaded (3).")
 
@@ -88,6 +103,16 @@ login_manager.login_view = "login" # The view name for the login page
 login_manager.login_message = "Please log in to access this page." # Message for unauthenticated users
 login_manager.login_message_category = "info" # Category for flash message styling
 print("DEBUG: LoginManager initialized (7).")
+
+# NEW: Initialize EasyOCR reader globally
+try:
+    # EasyOCR can be slow to initialize, do it once globally
+    easy_ocr_reader = easyocr.Reader(['en'])
+    print("DEBUG: EasyOCR reader initialized successfully.")
+except Exception as e:
+    print(f"ERROR: EasyOCR initialization failed. Make sure it's installed correctly "
+          f"and language data is available: {e}")
+    easy_ocr_reader = None
 
 # --- User Model ---
 class User(db.Model, UserMixin):
@@ -168,13 +193,170 @@ def debug_request_info():
 
     print("-------------------------------------------\n")
 
+# --- OCR Functions (Copied from your provided script) ---
+
+def preprocess_image_for_ocr(image_input):
+    img_cv = None
+    if isinstance(image_input, str):
+        if not os.path.exists(image_input):
+            print(f"Error: Image file not found at {image_input}")
+            return None
+        img_cv = cv2.imread(image_input)
+        if img_cv is None:
+            print(f"Error: Could not read image from path {image_input}")
+            return None
+    elif isinstance(image_input, Image.Image):
+        img_cv = cv2.cvtColor(np.array(image_input), cv2.COLOR_RGB2BGR)
+    elif isinstance(image_input, np.ndarray):
+        img_cv = image_input
+    else:
+        print(f"Error: Unsupported image input type: {type(image_input)}")
+        return None
+
+    try:
+        gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                         cv2.THRESH_BINARY_INV, 11, 2)
+        return Image.fromarray(thresh)
+    except Exception as e:
+        print(f"An error occurred during image preprocessing: {e}")
+        return None
+
+def perform_ocr_pytesseract(image_pil):
+    if not image_pil:
+        return None
+    try:
+        text = pytesseract.image_to_string(image_pil)
+        return text
+    except pytesseract.TesseractNotFoundError:
+        print("Pytesseract Error: Tesseract OCR engine not found.")
+        return None
+    except Exception as e:
+        print(f"An error occurred during pytesseract OCR: {e}")
+        return None
+
+def perform_ocr_easyocr(image_input):
+    if not easy_ocr_reader:
+        print("EasyOCR reader not initialized. Skipping EasyOCR.")
+        return None
+    try:
+        # EasyOCR can directly take file path, numpy array, or image bytes
+        if isinstance(image_input, str):
+            results = easy_ocr_reader.readtext(image_input)
+        elif isinstance(image_input, Image.Image):
+            img_np = cv2.cvtColor(np.array(image_input), cv2.COLOR_RGB2BGR)
+            results = easy_ocr_reader.readtext(img_np)
+        elif isinstance(image_input, np.ndarray):
+            results = easy_ocr_reader.readtext(image_input)
+        else:
+            print(f"Error: Unsupported image input type for EasyOCR: {type(image_input)}")
+            return None
+        extracted_text = ""
+        for (bbox, text, prob) in results:
+            extracted_text += text + " "
+        return extracted_text.strip()
+    except Exception as e:
+        print(f"An error occurred during EasyOCR: {e}")
+        return None
+
+def extract_and_validate_isbns(text):
+    if not text:
+        return []
+    isbn_pattern = re.compile(
+        r'\b(?:ISBN(?:-1[03])?:?\s*)?'
+        r'((?:97[89][-\s]?)?\d{1,5}[-\s]?\d{1,7}[-\s]?\d{1,6}[-\s]?[\dX]\b)',
+        re.IGNORECASE
+    )
+    potential_isbns = []
+    for match in isbn_pattern.finditer(text):
+        raw_isbn_candidate = match.group(1)
+        cleaned_isbn = re.sub(r'[-\s]', '', raw_isbn_candidate).upper()
+        if len(cleaned_isbn) == 10 or len(cleaned_isbn) == 13:
+            potential_isbns.append(cleaned_isbn)
+    valid_isbns = []
+    for isbn_candidate in set(potential_isbns):
+        if isbnlib.is_isbn10(isbn_candidate) or isbnlib.is_isbn13(isbn_candidate):
+            valid_isbns.append(isbn_candidate)
+    return sorted(set(valid_isbns))
+
+def process_book_cover_image(image_input, ocr_engine='easyocr'): # Default to easyocr for web
+    results = {
+        'full_text': None,
+        'isbns': [],
+        'status': 'fail',
+        'message': 'Initial state'
+    }
+    
+    img_for_easyocr_input = None
+    img_for_pytesseract_pil = None
+
+    try:
+        if isinstance(image_input, bytes):
+            # For bytes, decode to numpy array first
+            nparr = np.frombuffer(image_input, np.uint8)
+            img_cv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if img_cv is None:
+                results['message'] = "Could not decode image bytes."
+                return results
+            img_for_easyocr_input = img_cv # EasyOCR can take numpy array
+            img_for_pytesseract_pil = preprocess_image_for_ocr(img_cv)
+            if not img_for_pytesseract_pil:
+                results['message'] = "Preprocessing image from bytes failed."
+                return results
+        elif isinstance(image_input, str): # Path
+            img_for_easyocr_input = image_input
+            img_for_pytesseract_pil = preprocess_image_for_ocr(image_input)
+            if not img_for_pytesseract_pil:
+                results['message'] = "Preprocessing image from path failed."
+                return results
+        elif isinstance(image_input, Image.Image): # PIL Image
+            img_for_easyocr_input = cv2.cvtColor(np.array(image_input), cv2.COLOR_RGB2BGR)
+            img_for_pytesseract_pil = preprocess_image_for_ocr(image_input)
+            if not img_for_pytesseract_pil:
+                results['message'] = "Preprocessing image from PIL Image failed."
+                return results
+        elif isinstance(image_input, np.ndarray): # Numpy array
+            img_for_easyocr_input = image_input
+            img_for_pytesseract_pil = preprocess_image_for_ocr(image_input)
+            if not img_for_pytesseract_pil:
+                results['message'] = "Preprocessing image from numpy array failed."
+                return results
+        else:
+            results['message'] = f"Unsupported input type for image_input: {type(image_input)}"
+            return results
+
+        extracted_text = None
+        if ocr_engine == 'pytesseract':
+            print("Running OCR with Pytesseract...")
+            extracted_text = perform_ocr_pytesseract(img_for_pytesseract_pil)
+        elif ocr_engine == 'easyocr':
+            print("Running OCR with EasyOCR...")
+            extracted_text = perform_ocr_easyocr(img_for_easyocr_input) # Use appropriate input for EasyOCR
+        else:
+            results['message'] = f"Invalid OCR engine specified: {ocr_engine}. Choose 'pytesseract' or 'easyocr'."
+            return results
+
+        if extracted_text:
+            results['full_text'] = extracted_text
+            results['isbns'] = extract_and_validate_isbns(extracted_text)
+            results['status'] = 'success'
+            results['message'] = 'Text and ISBNs extracted successfully.'
+        else:
+            results['message'] = f"No text extracted using {ocr_engine}."
+    except Exception as e:
+        results['message'] = f"An unexpected error occurred during processing: {e}"
+    return results
+
+# --- End OCR Functions ---
+
+
 # --- Routes ---
 
 @app.route("/")
 @login_required
 def home():
     """Renders the user's dashboard."""
-    # MODIFIED: Fetch ONLY the last added book for the current user
     last_book = Book.query.filter_by(user_id=current_user.id).order_by(Book.id.desc()).first()
     return render_template("dashboard.html", username=current_user.username, last_book=last_book)
 
@@ -208,6 +390,51 @@ def upload():
             flash("Invalid file type. Allowed types: " + ", ".join(ALLOWED_EXTENSIONS), "danger")
     
     return render_template("upload.html", username=current_user.username)
+
+# NEW: Route for OCR image upload and processing
+@app.route("/ocr_upload", methods=["POST"])
+@login_required
+def ocr_upload():
+    if 'image' not in request.files:
+        return jsonify({"status": "error", "message": "No image file provided."}), 400
+    
+    file = request.files['image']
+    
+    if file.filename == '':
+        return jsonify({"status": "error", "message": "No selected image file."}), 400
+    
+    if file and allowed_image_file(file.filename):
+        try:
+            # Read image into bytes in memory
+            image_bytes = file.read()
+            
+            # Process the image using OCR functions
+            # Defaulting to easyocr for web app for potentially better out-of-the-box results
+            ocr_results = process_book_cover_image(image_bytes, ocr_engine='easyocr')
+            
+            if ocr_results['status'] == 'success':
+                # Prioritize ISBN if found, otherwise use full text
+                extracted_query = ""
+                if ocr_results['isbns']:
+                    extracted_query = ocr_results['isbns'][0] # Take the first ISBN
+                elif ocr_results['full_text']:
+                    # Take a reasonable portion of text if no ISBN, to avoid overly long queries
+                    extracted_query = ocr_results['full_text'][:200] # Limit to first 200 chars
+                
+                return jsonify({
+                    "status": "success",
+                    "query": extracted_query,
+                    "full_text": ocr_results['full_text'],
+                    "isbns": ocr_results['isbns']
+                })
+            else:
+                return jsonify({"status": "error", "message": ocr_results['message']}), 500
+        except Exception as e:
+            print(f"ERROR: Exception during OCR upload: {e}")
+            return jsonify({"status": "error", "message": f"An unexpected error occurred during OCR: {str(e)}"}), 500
+    else:
+        return jsonify({"status": "error", "message": "Invalid image file type. Allowed: png, jpg, jpeg, gif, bmp, tiff."}), 400
+
 
 @app.route("/chart_data")
 @login_required
@@ -385,7 +612,7 @@ def search_books():
     params = {
         "q": query,
         "maxResults": 10,
-        "key": app.config["GOOGLE_BOOKS_API_KEY"] # API key is now read from config
+        "key": app.config["GOOGLE_BOOKS_API_KEY"]
     }
 
     try:

@@ -108,8 +108,9 @@ function setupCharts() {
     }
 }
 
-// --- NEW: Book Search Functionality ---
+// --- Book Search Functionality (Google Books API) ---
 async function searchBooks() {
+    console.log("DEBUG: searchBooks() function called."); // Added log
     const query = document.getElementById('bookSearchQuery').value;
     const searchResultsDiv = document.getElementById('searchResults');
     const searchStatus = document.getElementById('searchStatus');
@@ -117,23 +118,29 @@ async function searchBooks() {
     if (!query) {
         searchResultsDiv.innerHTML = '';
         searchStatus.textContent = "Please enter a search query.";
+        console.log("DEBUG: Search query is empty."); // Added log
         return;
     }
 
     searchStatus.textContent = "Searching...";
     searchResultsDiv.innerHTML = ''; // Clear previous results
+    console.log(`DEBUG: Initiating fetch for query: ${query}`); // Added log
 
     try {
         const response = await fetch(`/search_books?query=${encodeURIComponent(query)}`);
+        console.log("DEBUG: Fetch response received."); // Added log
         const books = await response.json();
+        console.log("DEBUG: Books data parsed:", books); // Added log
 
         if (books.error) {
             searchStatus.textContent = `Error: ${books.error}`;
+            console.log(`DEBUG: API returned error: ${books.error}`); // Added log
             return;
         }
 
         if (books.length === 0) {
             searchStatus.textContent = "No books found. Try a different query.";
+            console.log("DEBUG: No books found."); // Added log
             return;
         }
 
@@ -163,6 +170,7 @@ async function searchBooks() {
                 const author = btn.dataset.author;
                 const isbn = btn.dataset.isbn;
                 const coverImage = btn.dataset.coverImageUrl;
+                console.log(`DEBUG: Add to Library button clicked for: ${title}`); // Added log
 
                 // Send data to the Flask add_book endpoint
                 const formData = new FormData();
@@ -184,13 +192,13 @@ async function searchBooks() {
                         window.location.href = response.url; // Follow the redirect
                     } else {
                         // If not redirected, something went wrong or it's a JSON error
-                        const result = JSON.parse(responseText); // Try parsing as JSON
-                        if (result.error) {
-                            alert(`Error adding book: ${result.error}`); // Use alert for direct error feedback
-                        } else {
-                            // This case should ideally not happen if Flask always redirects on success/failure
+                        // This part might need refinement based on Flask's actual non-redirect error responses
+                        try {
+                            const result = JSON.parse(responseText);
+                            alert(`Error adding book: ${result.message || JSON.stringify(result)}`);
+                        } catch (parseError) {
                             alert("Book added successfully (but no redirect detected). Please refresh.");
-                            console.log(result);
+                            console.log("Raw response:", responseText);
                         }
                     }
                 } catch (error) {
@@ -206,10 +214,65 @@ async function searchBooks() {
     }
 }
 
+// --- OCR Image Upload and Search Integration ---
+async function uploadImageForOcr() {
+    const ocrImageInput = document.getElementById('ocrImageInput');
+    const ocrStatus = document.getElementById('ocrStatus');
+    const bookSearchQueryInput = document.getElementById('bookSearchQuery');
+
+    if (ocrImageInput.files.length === 0) {
+        ocrStatus.textContent = "Please select an image file first.";
+        return;
+    }
+
+    const file = ocrImageInput.files[0];
+    const formData = new FormData();
+    formData.append('image', file);
+
+    ocrStatus.textContent = "Processing image with OCR...";
+    ocrStatus.style.color = "var(--flash-info)"; // Use info color for processing
+
+    try {
+        const response = await fetch('/ocr_upload', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            ocrStatus.textContent = "OCR successful! Searching for book...";
+            ocrStatus.style.color = "var(--flash-success)";
+
+            // Populate search bar with extracted query (ISBN or text)
+            bookSearchQueryInput.value = result.query;
+            
+            // Trigger the book search
+            searchBooks();
+
+        } else {
+            ocrStatus.textContent = `OCR Failed: ${result.message}`;
+            ocrStatus.style.color = "var(--flash-danger)";
+        }
+    } catch (error) {
+        console.error('Error during OCR upload:', error);
+        ocrStatus.textContent = "An error occurred during image processing.";
+        ocrStatus.style.color = "var(--flash-danger)";
+    }
+}
+
 
 // --- On page load: Initialize all necessary functionalities ---
 window.onload = () => {
     loadTheme(); // Load saved theme settings
     setupSocket(); // Initialize Socket.IO for real-time notifications
     setupCharts(); // Initialize Chart.js for data visualization
+
+    // NEW: Attach event listener for the search button
+    const searchButton = document.getElementById('searchButton');
+    if (searchButton) {
+        searchButton.addEventListener('click', searchBooks);
+        console.log("DEBUG: Search button event listener attached.");
+    } else {
+        console.error("DEBUG: Search button (id='searchButton') not found.");
+    }
 };

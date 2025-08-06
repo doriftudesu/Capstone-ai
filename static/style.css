@@ -319,7 +319,7 @@ body.dark .dropzone { /* Dark theme specific styling for dropzone */
 }
 
 /* Library Section Styles */
-.add-book-section, .book-list-section, .last-book-section, .book-search-section { /* Added .book-search-section */
+.add-book-section, .book-list-section, .last-book-section, .book-search-section, .ocr-upload-section { /* Added .ocr-upload-section */
     background-color: var(--background-color);
     padding: 1.5rem;
     border-radius: 12px;
@@ -328,7 +328,7 @@ body.dark .dropzone { /* Dark theme specific styling for dropzone */
     transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
 }
 
-.add-book-section h3, .book-list-section h3, .last-book-section h3, .book-search-section h3 { /* Added .book-search-section h3 */
+.add-book-section h3, .book-list-section h3, .last-book-section h3, .book-search-section h3, .ocr-upload-section h3 { /* Added .ocr-upload-section h3 */
     color: var(--primary-color);
     margin-bottom: 1rem;
     font-size: 1.3em;
@@ -361,7 +361,7 @@ body.dark .dropzone { /* Dark theme specific styling for dropzone */
     color: white;
 }
 
-/* NEW: Book Search Form Styles */
+/* Book Search Form Styles */
 .search-form {
     display: flex;
     gap: 1rem;
@@ -379,6 +379,31 @@ body.dark .dropzone { /* Dark theme specific styling for dropzone */
 }
 
 .search-form button {
+    padding: 0.8rem 1.5rem;
+    background-color: var(--primary-color);
+    color: white;
+    white-space: nowrap;
+}
+
+/* NEW: OCR Upload Form Styles */
+.ocr-upload-form {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    align-items: center;
+}
+
+.ocr-upload-form input[type="file"] {
+    flex-grow: 1;
+    padding: 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--card-background);
+    color: var(--text-color);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.5s ease, color 0.5s ease;
+}
+
+.ocr-upload-form button {
     padding: 0.8rem 1.5rem;
     background-color: var(--primary-color);
     color: white;
@@ -534,11 +559,11 @@ footer {
         font-size: 1em;
     }
 
-    .add-book-form, .search-form { /* Apply to both forms */
+    .add-book-form, .search-form, .ocr-upload-form { /* Apply to all forms */
         grid-template-columns: 1fr; /* Stack inputs and button vertically */
     }
 
-    .add-book-form button, .search-form button {
+    .add-book-form button, .search-form button, .ocr-upload-form button {
         width: 100%; /* Full width buttons on small screens */
     }
 }

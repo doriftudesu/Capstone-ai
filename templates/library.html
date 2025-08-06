@@ -32,20 +32,28 @@
 
         <h2>My Book Library</h2>
 
+        <!-- OCR Upload Section -->
+        <section class="ocr-upload-section">
+            <h3>Upload Book Cover for OCR Search</h3>
+            <div class="ocr-upload-form">
+                <input type="file" id="ocrImageInput" accept="image/*">
+                <button onclick="uploadImageForOcr()">Process Image & Search</button>
+            </div>
+            <p id="ocrStatus" style="text-align: center; color: var(--text-color); margin-top: 1rem;"></p>
+        </section>
+
         <!-- Book Search Section -->
         <section class="book-search-section">
             <h3>Search for Books</h3>
             <div class="search-form">
                 <input type="text" id="bookSearchQuery" placeholder="Search by title or author...">
-                <button onclick="searchBooks()">Search</button>
+                <button id="searchButton">Search</button> <!-- MODIFIED: Added ID, removed onclick -->
             </div>
             <div id="searchResults" class="book-cards-container">
                 <!-- Search results will be loaded here by JavaScript -->
                 <p id="searchStatus" style="text-align: center; color: var(--text-color); margin-top: 1rem;">Start typing to search for books!</p>
             </div>
         </section>
-
-        <!-- REMOVED: Form to Add New Books (Manual Entry) -->
 
         <!-- List of Books in Your Library -->
         <section class="book-list-section">
