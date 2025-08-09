@@ -110,37 +110,43 @@ function setupCharts() {
 
 // --- Book Search Functionality (Google Books API) ---
 async function searchBooks() {
-    console.log("DEBUG: searchBooks() function called."); // Added log
+    console.log("DEBUG: searchBooks() function called for a new search.");
     const query = document.getElementById('bookSearchQuery').value;
-    const searchResultsDiv = document.getElementById('searchResults');
+    const bookCardsContainer = document.getElementById('bookCardsContainer'); // NEW: Get the dedicated container
     const searchStatus = document.getElementById('searchStatus');
 
+    // Check if the search-related elements exist on the page
+    if (!bookCardsContainer || !searchStatus) {
+        console.error("Required search elements not found on the page. Skipping search.");
+        return;
+    }
+
     if (!query) {
-        searchResultsDiv.innerHTML = '';
         searchStatus.textContent = "Please enter a search query.";
-        console.log("DEBUG: Search query is empty."); // Added log
+        bookCardsContainer.innerHTML = ''; // Clear only the book cards container
+        console.log("DEBUG: Search query is empty.");
         return;
     }
 
     searchStatus.textContent = "Searching...";
-    searchResultsDiv.innerHTML = ''; // Clear previous results
-    console.log(`DEBUG: Initiating fetch for query: ${query}`); // Added log
+    bookCardsContainer.innerHTML = ''; // Clear only the book cards container
+    console.log(`DEBUG: Initiating fetch for query: ${query}`);
 
     try {
         const response = await fetch(`/search_books?query=${encodeURIComponent(query)}`);
-        console.log("DEBUG: Fetch response received."); // Added log
+        console.log("DEBUG: Fetch response received.");
         const books = await response.json();
-        console.log("DEBUG: Books data parsed:", books); // Added log
+        console.log("DEBUG: Books data parsed:", books);
 
         if (books.error) {
             searchStatus.textContent = `Error: ${books.error}`;
-            console.log(`DEBUG: API returned error: ${books.error}`); // Added log
+            console.log(`DEBUG: API returned error: ${books.error}`);
             return;
         }
 
         if (books.length === 0) {
             searchStatus.textContent = "No books found. Try a different query.";
-            console.log("DEBUG: No books found."); // Added log
+            console.log("DEBUG: No books found.");
             return;
         }
 
@@ -159,7 +165,7 @@ async function searchBooks() {
                         data-isbn="${book.isbn || ''}"
                         data-cover-image-url="${book.cover_image_url || ''}">Add to Library</button>
             `;
-            searchResultsDiv.appendChild(bookCard);
+            bookCardsContainer.appendChild(bookCard); // Appending to the new container
         });
 
         // Add event listeners to the new "Add to Library" buttons
@@ -170,7 +176,7 @@ async function searchBooks() {
                 const author = btn.dataset.author;
                 const isbn = btn.dataset.isbn;
                 const coverImage = btn.dataset.coverImageUrl;
-                console.log(`DEBUG: Add to Library button clicked for: ${title}`); // Added log
+                console.log(`DEBUG: Add to Library button clicked for: ${title}`);
 
                 // Send data to the Flask add_book endpoint
                 const formData = new FormData();
@@ -184,15 +190,11 @@ async function searchBooks() {
                         method: 'POST',
                         body: formData
                     });
-                    const responseText = await response.text(); // Get raw text to check for redirect
+                    const responseText = await response.text();
                     
-                    // Flask's redirect will return an HTML response with a meta refresh or script redirect
-                    // We need to check if it's a redirect and follow it
                     if (response.redirected) {
-                        window.location.href = response.url; // Follow the redirect
+                        window.location.href = response.url;
                     } else {
-                        // If not redirected, something went wrong or it's a JSON error
-                        // This part might need refinement based on Flask's actual non-redirect error responses
                         try {
                             const result = JSON.parse(responseText);
                             alert(`Error adding book: ${result.message || JSON.stringify(result)}`);
@@ -220,6 +222,12 @@ async function uploadImageForOcr() {
     const ocrStatus = document.getElementById('ocrStatus');
     const bookSearchQueryInput = document.getElementById('bookSearchQuery');
 
+    // Check if the OCR-related elements exist on the page
+    if (!ocrImageInput || !ocrStatus || !bookSearchQueryInput) {
+        console.error("Required OCR elements not found on the page. Skipping OCR functionality.");
+        return;
+    }
+
     if (ocrImageInput.files.length === 0) {
         ocrStatus.textContent = "Please select an image file first.";
         return;
@@ -230,7 +238,7 @@ async function uploadImageForOcr() {
     formData.append('image', file);
 
     ocrStatus.textContent = "Processing image with OCR...";
-    ocrStatus.style.color = "var(--flash-info)"; // Use info color for processing
+    ocrStatus.style.color = "var(--flash-info)";
 
     try {
         const response = await fetch('/ocr_upload', {
@@ -261,13 +269,13 @@ async function uploadImageForOcr() {
 }
 
 
-// --- On page load: Initialize all necessary functionalities ---
-window.onload = () => {
-    loadTheme(); // Load saved theme settings
-    setupSocket(); // Initialize Socket.IO for real-time notifications
-    setupCharts(); // Initialize Chart.js for data visualization
+// --- Event listener for when the page is fully loaded and parsed ---
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("DEBUG: DOMContentLoaded event fired.");
+    loadTheme();
+    setupSocket();
+    setupCharts();
 
-    // NEW: Attach event listener for the search button
     const searchButton = document.getElementById('searchButton');
     if (searchButton) {
         searchButton.addEventListener('click', searchBooks);
@@ -275,4 +283,4 @@ window.onload = () => {
     } else {
         console.error("DEBUG: Search button (id='searchButton') not found.");
     }
-};
+});
