@@ -4,18 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Library | WebApp</title>
+    <!-- Link to the external CSS file -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <!-- NEW: Add the Socket.IO library from a CDN -->
+    <!-- Tailwind CSS for modern utility classes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add the Socket.IO library from a CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
-    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 <body>
     <header>
         <h1>Welcome, {{ username }}!</h1>
         <nav>
             <a href="{{ url_for('home') }}">Dashboard</a>
-            <a href="{{ url_for('upload') }}">Upload File</a>
-            <a href="{{ url_for('library') }}">My Library</a> <!-- Active link for library -->
+            <a href="{{ url_for('ocr_upload') }}">Upload File</a>
+            <a href={{ url_for('my_library') }} class="text-indigo-600 dark:text-indigo-400">My Library</a>
             <a href="{{ url_for('logout') }}">Logout</a>
             <button onclick="toggleTheme()">Toggle Theme</button>
         </nav>
@@ -39,8 +41,9 @@
             <h3>Upload Book Cover for OCR Search</h3>
             <div class="ocr-upload-form">
                 <input type="file" id="ocrImageInput" accept="image/*">
-                <button onclick="uploadImageForOcr()">Process Image & Search</button>
+                <button id="ocrButton" class="bg-green-600 hover:bg-green-700">Process Image & Search</button>
             </div>
+            <p id="ocrStatus"></p>
         </section>
         
         <!-- Book Search Section -->
@@ -48,7 +51,7 @@
             <h3>Search for Books</h3>
             <div class="search-form">
                 <input type="text" id="bookSearchQuery" placeholder="Search by title, author, or ISBN...">
-                <button id="searchButton">Search</button>
+                <button id="searchButton" class="bg-indigo-600 hover:bg-indigo-700">Search</button>
             </div>
             
             <p id="searchStatus">Start typing to search for books!</p>
@@ -85,7 +88,10 @@
     </main>
 
     <footer>
-        <p>&copy; 2023 Your WebApp</p>
+        <p class="text-center p-4 text-gray-500 dark:text-gray-400">&copy; 2023 Your WebApp</p>
     </footer>
+
+    <!-- Link to the external JavaScript file -->
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </body>
 </html>

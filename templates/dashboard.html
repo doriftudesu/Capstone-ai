@@ -14,8 +14,8 @@
         <h1>Welcome, {{ username }}!</h1>
         <nav>
             <a href="{{ url_for('home') }}">Dashboard</a>
-            <a href="{{ url_for('upload') }}">Upload File</a>
-            <a href="{{ url_for('library') }}">My Library</a>
+            <a href="{{ url_for('ocr_upload') }}">Upload File</a>
+            <a href="{{ url_for('my_library') }}">My Library</a>
             <a href="{{ url_for('logout') }}">Logout</a>
             <button onclick="toggleTheme()" style="margin-left: 1.5rem; padding: 0.5rem 1rem; background-color: var(--secondary-color); color: white; border-radius: 5px;">Toggle Theme</button>
         </nav>
@@ -45,10 +45,10 @@
                 <div class="book-card">
                     <h4>{{ last_book.title }}</h4>
                     <p>by {{ last_book.author if last_book.author else 'Unknown' }}</p>
-                    <a href="{{ url_for('library') }}" class="button view-library-button">View All Books</a>
+                    <a href={{ url_for('my_library') }} class="button view-library-button">View All Books</a>
                 </div>
             {% else %}
-                <p>No books added yet. <a href="{{ url_for('library') }}">Add your first book!</a></p>
+                <p>No books added yet. <a href={{ url_for('my_library') }}>Add your first book!</a></p>
             {% endif %}
         </section>
 

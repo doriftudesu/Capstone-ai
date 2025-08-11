@@ -2,6 +2,8 @@
 
 // --- Theme toggle with persistence ---
 function toggleTheme() {
+    // The user's provided code uses a 'light' class, while my previous code used a 'dark' class.
+    // I'll update it to be consistent with the user's provided code.
     const isLight = document.body.classList.toggle('light');
     localStorage.setItem('theme', isLight ? 'light' : 'dark');
 }
@@ -53,30 +55,37 @@ if (dz && fileInput) { // Ensure elements exist before adding listeners
 }
 
 // --- Socket.IO Notifications ---
+// Ensure you have the Socket.IO client library included in your HTML:
+// <script src="/socket.io/socket.io.js"></script>
 function setupSocket() {
-    const socket = io();
+    if (typeof io !== 'undefined') {
+        const socket = io();
 
-    socket.on('connect', () => {
-        console.log('Connected to server via Socket.IO');
-    });
+        socket.on('connect', () => {
+            console.log('Connected to server via Socket.IO');
+        });
 
-    socket.on('file_uploaded', (data) => {
-        const notificationList = document.getElementById('notification-list');
-        if (notificationList) {
-            const listItem = document.createElement('li');
-            listItem.textContent = `New file uploaded: ${data.filename} by ${data.user}`;
-            notificationList.appendChild(listItem);
-        } else {
-            console.warn("Notification list (id='notification-list') not found.");
-        }
-    });
+        socket.on('file_uploaded', (data) => {
+            const notificationList = document.getElementById('notification-list');
+            if (notificationList) {
+                const listItem = document.createElement('li');
+                listItem.textContent = `New file uploaded: ${data.filename} by ${data.user}`;
+                notificationList.appendChild(listItem);
+            } else {
+                console.warn("Notification list (id='notification-list') not found.");
+            }
+        });
+    } else {
+        console.warn("Socket.IO client library not found. Skipping socket setup.");
+    }
 }
 
 // --- Chart.js Data Fetching and Rendering ---
+// Ensure you have the Chart.js library included in your HTML:
+// <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 function setupCharts() {
-    // Only attempt to fetch and render chart if the canvas element exists
     const myChartCanvas = document.getElementById('myChart');
-    if (myChartCanvas) {
+    if (myChartCanvas && typeof Chart !== 'undefined') {
         fetch('/chart_data')
             .then(response => response.json())
             .then(data => {
@@ -104,183 +113,223 @@ function setupCharts() {
             })
             .catch(error => console.error('Error fetching chart data:', error));
     } else {
-        console.log("Chart canvas (id='myChart') not found, skipping chart setup.");
+        console.log("Chart canvas (id='myChart') or Chart.js library not found, skipping chart setup.");
     }
 }
 
-// --- Book Search Functionality (Google Books API) ---
-async function searchBooks() {
-    console.log("DEBUG: searchBooks() function called for a new search.");
-    const query = document.getElementById('bookSearchQuery').value;
-    const bookCardsContainer = document.getElementById('bookCardsContainer'); // NEW: Get the dedicated container
+// -------------------------------------------------------------------------------------------------
+// --- Book Search and OCR Functionality from Previous Conversation (Re-integrated) ---
+// -------------------------------------------------------------------------------------------------
+
+/**
+ * Creates and returns an HTML element for a book card.
+ * @param {object} book The book data object.
+ * @returns {HTMLDivElement} The book card element.
+ */
+function createBookCard(book) {
+    const bookCard = document.createElement('div');
+    bookCard.className = 'book-card';
+    bookCard.innerHTML = `
+        <img src="${book.cover_image_url || 'https://placehold.co/128x192/e0e0e0/333?text=No+Cover'}"
+            alt="Cover of ${book.title}"
+            class="book-cover"
+            onerror="this.onerror=null;this.src='https://placehold.co/128x192/e0e0e0/333?text=No+Cover';"
+        >
+        <h4>${book.title}</h4>
+        <p>by ${book.author || 'Unknown'}</p>
+        <p class="book-isbn">ISBN: ${book.isbn || 'N/A'}</p>
+        <button class="add-book-button bg-indigo-500 text-white font-semibold py-2 px-4 rounded-lg mt-4 hover:bg-indigo-600 transition-colors" data-book='${JSON.stringify(book)}'>Add to Library</button>
+    `;
+    return bookCard;
+}
+
+/**
+ * Fetches book data from the server based on a text query and displays the results.
+ * @param {string} query The search query string.
+ */
+async function performBookSearch(query) {
+    const bookCardsContainer = document.getElementById('bookCardsContainer');
     const searchStatus = document.getElementById('searchStatus');
-
-    // Check if the search-related elements exist on the page
-    if (!bookCardsContainer || !searchStatus) {
-        console.error("Required search elements not found on the page. Skipping search.");
-        return;
-    }
-
-    if (!query) {
-        searchStatus.textContent = "Please enter a search query.";
-        bookCardsContainer.innerHTML = ''; // Clear only the book cards container
-        console.log("DEBUG: Search query is empty.");
-        return;
-    }
-
-    searchStatus.textContent = "Searching...";
-    bookCardsContainer.innerHTML = ''; // Clear only the book cards container
-    console.log(`DEBUG: Initiating fetch for query: ${query}`);
-
+    const searchButton = document.getElementById('searchButton');
+    
+    bookCardsContainer.innerHTML = '';
+    searchStatus.textContent = 'Searching for books...';
+    // Disable search button to prevent multiple requests
+    if (searchButton) searchButton.disabled = true;
+    
     try {
         const response = await fetch(`/search_books?query=${encodeURIComponent(query)}`);
-        console.log("DEBUG: Fetch response received.");
+        
+        // --- MODIFIED CODE START ---
+        if (!response.ok) {
+            // If the response is not successful, it's likely an HTML error page.
+            // We should not try to parse it as JSON.
+            const errorText = await response.text();
+            console.error('Server responded with an error:', response.status, response.statusText);
+            console.error('Server response content:', errorText);
+            searchStatus.textContent = `Error: Server responded with status ${response.status}. Please try a different query.`;
+            return; // Stop execution here
+        }
+
         const books = await response.json();
-        console.log("DEBUG: Books data parsed:", books);
+        // --- MODIFIED CODE END ---
 
-        if (books.error) {
-            searchStatus.textContent = `Error: ${books.error}`;
-            console.log(`DEBUG: API returned error: ${books.error}`);
-            return;
-        }
-
-        if (books.length === 0) {
-            searchStatus.textContent = "No books found. Try a different query.";
-            console.log("DEBUG: No books found.");
-            return;
-        }
-
-        searchStatus.textContent = ""; // Clear status message
-        books.forEach(book => {
-            const bookCard = document.createElement('div');
-            bookCard.classList.add('book-card');
-            bookCard.innerHTML = `
-                <img src="${book.cover_image_url || 'https://placehold.co/128x192/e0e0e0/333?text=No+Cover'}" alt="Cover of ${book.title}" class="book-cover" onerror="this.onerror=null;this.src='https://placehold.co/128x192/e0e0e0/333?text=No+Cover';">
-                <h4>${book.title}</h4>
-                <p>by ${book.author || 'Unknown'}</p>
-                ${book.isbn ? `<p class="book-isbn">ISBN: ${book.isbn}</p>` : ''}
-                <button class="add-from-search-button"
-                        data-title="${book.title}"
-                        data-author="${book.author || ''}"
-                        data-isbn="${book.isbn || ''}"
-                        data-cover-image-url="${book.cover_image_url || ''}">Add to Library</button>
-            `;
-            bookCardsContainer.appendChild(bookCard); // Appending to the new container
-        });
-
-        // Add event listeners to the new "Add to Library" buttons
-        document.querySelectorAll('.add-from-search-button').forEach(button => {
-            button.addEventListener('click', async (event) => {
-                const btn = event.target;
-                const title = btn.dataset.title;
-                const author = btn.dataset.author;
-                const isbn = btn.dataset.isbn;
-                const coverImage = btn.dataset.coverImageUrl;
-                console.log(`DEBUG: Add to Library button clicked for: ${title}`);
-
-                // Send data to the Flask add_book endpoint
-                const formData = new FormData();
-                formData.append('title', title);
-                formData.append('author', author);
-                formData.append('isbn', isbn);
-                formData.append('cover_image_url', coverImage);
-
-                try {
-                    const response = await fetch('/add_book', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const responseText = await response.text();
-                    
-                    if (response.redirected) {
-                        window.location.href = response.url;
-                    } else {
-                        try {
-                            const result = JSON.parse(responseText);
-                            alert(`Error adding book: ${result.message || JSON.stringify(result)}`);
-                        } catch (parseError) {
-                            alert("Book added successfully (but no redirect detected). Please refresh.");
-                            console.log("Raw response:", responseText);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error adding book from search:', error);
-                    alert('An error occurred while adding the book.');
-                }
+        if (books && books.length > 0) {
+            searchStatus.textContent = ''; // Clear status message
+            books.forEach(book => {
+                const bookCard = createBookCard(book);
+                bookCardsContainer.appendChild(bookCard);
             });
-        });
-
+        } else {
+            searchStatus.textContent = 'No books found. Try a different search.';
+        }
     } catch (error) {
-        console.error('Error searching books:', error);
-        searchStatus.textContent = "Failed to search for books. Please try again.";
+        console.error('Error fetching search results:', error);
+        searchStatus.textContent = 'An error occurred during the search.';
+    } finally {
+        if (searchButton) searchButton.disabled = false;
     }
 }
 
-// --- OCR Image Upload and Search Integration ---
+/**
+ * Uploads an image file for OCR, then performs a book search using the extracted text.
+ */
 async function uploadImageForOcr() {
     const ocrImageInput = document.getElementById('ocrImageInput');
     const ocrStatus = document.getElementById('ocrStatus');
-    const bookSearchQueryInput = document.getElementById('bookSearchQuery');
+    const ocrButton = document.getElementById('ocrButton');
+    const bookSearchQuery = document.getElementById('bookSearchQuery');
 
-    // Check if the OCR-related elements exist on the page
-    if (!ocrImageInput || !ocrStatus || !bookSearchQueryInput) {
-        console.error("Required OCR elements not found on the page. Skipping OCR functionality.");
-        return;
-    }
-
-    if (ocrImageInput.files.length === 0) {
-        ocrStatus.textContent = "Please select an image file first.";
+    if (!ocrImageInput || !ocrStatus || !ocrButton || !bookSearchQuery) {
+        console.error('Required OCR or search elements not found on the page. Skipping OCR functionality.');
         return;
     }
 
     const file = ocrImageInput.files[0];
+    if (!file) {
+        ocrStatus.textContent = 'Please select an image file first.';
+        return;
+    }
+
     const formData = new FormData();
     formData.append('image', file);
-
-    ocrStatus.textContent = "Processing image with OCR...";
-    ocrStatus.style.color = "var(--flash-info)";
+    
+    ocrButton.disabled = true;
+    ocrButton.textContent = 'Scanning...';
+    ocrStatus.textContent = 'Processing image and searching for book...';
 
     try {
         const response = await fetch('/ocr_upload', {
             method: 'POST',
             body: formData
         });
-        const result = await response.json();
 
-        if (result.status === 'success') {
-            ocrStatus.textContent = "OCR successful! Searching for book...";
-            ocrStatus.style.color = "var(--flash-success)";
-
-            // Populate search bar with extracted query (ISBN or text)
-            bookSearchQueryInput.value = result.query;
-            
-            // Trigger the book search
-            searchBooks();
-
-        } else {
-            ocrStatus.textContent = `OCR Failed: ${result.message}`;
-            ocrStatus.style.color = "var(--flash-danger)";
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Server responded with an error:', response.status, response.statusText);
+            console.error('Server response content:', errorText);
+            ocrStatus.textContent = `Error: Server responded with status ${response.status}. See console for details.`;
+            return;
         }
+
+        const result = await response.json();
+        
+        if (result && result.full_text) {
+             // Populate the manual search box with the extracted text
+             bookSearchQuery.value = result.full_text;
+             console.log('Populated manual search box with OCR text.');
+             
+             // Now perform the search using the extracted text
+             performBookSearch(result.full_text);
+             ocrStatus.textContent = `OCR successful! Found text: "${result.full_text}". Now searching...`;
+        } else {
+            ocrStatus.textContent = 'No text was found in the image. Please try a manual search.';
+        }
+
     } catch (error) {
-        console.error('Error during OCR upload:', error);
-        ocrStatus.textContent = "An error occurred during image processing.";
-        ocrStatus.style.color = "var(--flash-danger)";
+        console.error('Error during OCR search:', error);
+        ocrStatus.textContent = 'An error occurred while processing the image.';
+    } finally {
+        ocrButton.disabled = false;
+        ocrButton.textContent = 'Process Image & Search';
     }
 }
 
-
+// -------------------------------------------------------------------------------------------------
 // --- Event listener for when the page is fully loaded and parsed ---
+// -------------------------------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DEBUG: DOMContentLoaded event fired.");
     loadTheme();
     setupSocket();
     setupCharts();
 
+    // Event listener for manual book search
     const searchButton = document.getElementById('searchButton');
-    if (searchButton) {
-        searchButton.addEventListener('click', searchBooks);
-        console.log("DEBUG: Search button event listener attached.");
+    const bookSearchQuery = document.getElementById('bookSearchQuery');
+    if (searchButton && bookSearchQuery) {
+        searchButton.addEventListener('click', () => {
+            const query = bookSearchQuery.value.trim();
+            if (query) {
+                performBookSearch(query);
+            }
+        });
+        // Allow searching with the Enter key
+        bookSearchQuery.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') {
+                searchButton.click();
+            }
+        });
     } else {
-        console.error("DEBUG: Search button (id='searchButton') not found.");
+        console.error("DEBUG: Search button or input not found.");
+    }
+    
+    // Event listener for OCR search
+    const ocrUploadButton = document.querySelector('.ocr-upload-form button');
+    // The user's provided code had a different selector, this one is more robust
+    const ocrButton = document.getElementById('ocrButton');
+    if (ocrUploadButton || ocrButton) {
+        const buttonToListen = ocrButton || ocrUploadButton;
+        buttonToListen.addEventListener('click', (e) => {
+            e.preventDefault();
+            uploadImageForOcr();
+        });
+    } else {
+        console.error("DEBUG: OCR button not found.");
+    }
+
+    // Event listener for adding books to the library (event delegation)
+    const bookCardsContainer = document.getElementById('bookCardsContainer');
+    if (bookCardsContainer) {
+        bookCardsContainer.addEventListener('click', async (event) => {
+            if (event.target.classList.contains('add-book-button')) {
+                const button = event.target;
+                const bookData = JSON.parse(button.dataset.book);
+                
+                try {
+                    const response = await fetch('/add_book_to_library', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(bookData)
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        button.textContent = 'Added!';
+                        button.disabled = true;
+                        button.classList.add('bg-green-500', 'hover:bg-green-600', 'cursor-not-allowed');
+                        // The user's provided code used inline styling, this is a more robust class-based approach.
+                    } else {
+                        // Use a custom modal or a simple alert for feedback.
+                        alert('Failed to add book: ' + result.message);
+                    }
+                } catch (error) {
+                    console.error('Error adding book to library:', error);
+                    alert('An error occurred. Could not add book.');
+                }
+            }
+        });
     }
 });
