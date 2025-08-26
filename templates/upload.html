@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Files | BookSnap</title>
+    <title>Upload Files | Shakespeare</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <!-- Removed: <script src="https://unpkg.com/lucide@latest"></script> as icons are not used in header nav -->
 </head>
@@ -14,7 +14,7 @@
             <a href="{{ url_for('home') }}">Dashboard</a>
             <a href="{{ url_for('upload') }}">Upload File</a>
             <a href="{{ url_for('logout') }}">Logout</a>
-            <!-- Theme Toggle Button, consistent with dashboard.html -->
+            <!-- Theme Toggle Button-->
             <button onclick="toggleTheme()" style="margin-left: 1.5rem; padding: 0.5rem 1rem; background-color: var(--secondary-color); color: white; border-radius: 5px;">Toggle Theme</button>
         </nav>
     </header>

@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Library | WebApp</title>
+    <title>My Library | Shakespeare</title>
     <!-- Link to the external CSS file -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <!-- Tailwind CSS for modern utility classes -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Add the Socket.IO library from a CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <!-- Link to the external JavaScript file -->
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 <body>
     <header>
@@ -19,7 +21,7 @@
             <a href="{{ url_for('ocr_upload') }}">Upload File</a>
             <a href={{ url_for('my_library') }} class="text-indigo-600 dark:text-indigo-400">My Library</a>
             <a href="{{ url_for('logout') }}">Logout</a>
-            <button onclick="toggleTheme()">Toggle Theme</button>
+            <button onclick="toggleTheme()" class="theme-toggle-button">Toggle Theme</button>
         </nav>
     </header>
 
@@ -34,64 +36,46 @@
             {% endwith %}
         </section>
 
-        <h2>My Book Library</h2>
-
-        <!-- OCR Upload Section -->
-        <section class="ocr-upload-section">
-            <h3>Upload Book Cover for OCR Search</h3>
-            <div class="ocr-upload-form">
-                <input type="file" id="ocrImageInput" accept="image/*">
-                <button id="ocrButton" class="bg-green-600 hover:bg-green-700">Process Image & Search</button>
-            </div>
-            <p id="ocrStatus"></p>
-        </section>
-        
-        <!-- Book Search Section -->
-        <section class="book-search-section">
-            <h3>Search for Books</h3>
-            <div class="search-form">
-                <input type="text" id="bookSearchQuery" placeholder="Search by title, author, or ISBN...">
-                <button id="searchButton" class="bg-indigo-600 hover:bg-indigo-700">Search</button>
-            </div>
-            
-            <p id="searchStatus">Start typing to search for books!</p>
-            <div id="bookCardsContainer" class="book-cards-container">
-                <!-- Search results will be loaded here by JavaScript -->
-            </div>
-        </section>
-
-        <!-- List of Books in Your Library -->
-        <section class="book-list-section">
-            <h3>Your Books</h3>
+        <section class="my-library-container">
+            <h3>My Books</h3>
             {% if books %}
-                <div class="book-cards-container">
+                <div class="library-container">
                     {% for book in books %}
-                        <div class="book-card">
+                        <div class="book-item bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition-transform transform hover:scale-105">
                             {% if book.cover_image_url %}
-                                <img src="{{ book.cover_image_url }}" alt="Cover of {{ book.title }}" class="book-cover" onerror="this.onerror=null;this.src='https://placehold.co/128x192/e0e0e0/333?text=No+Cover';">
+                                <img src="{{ book.cover_image_url }}" alt="Book Cover" class="book-cover-img w-full h-48 object-cover">
                             {% else %}
-                                <img src="https://placehold.co/128x192/e0e0e0/333?text=No+Cover" alt="No Cover Available" class="book-cover">
+                                <img src="https://placehold.co/200x300/E5E7EB/4B5563?text=No+Cover" alt="No Cover Available" class="book-cover-img w-full h-48 object-cover">
                             {% endif %}
-                            <h4>{{ book.title }}</h4>
-                            <p>by {{ book.author if book.author else 'Unknown' }}</p>
-                            {% if book.isbn %}<p class="book-isbn">ISBN: {{ book.isbn }}</p>{% endif %}
-                            <form action="{{ url_for('delete_book', book_id=book.id) }}" method="post" onsubmit="return confirm('Are you sure you want to delete this book?');">
-                                <button type="submit" class="delete-button">Delete</button>
-                            </form>
+                            <div class="p-4">
+                                <h4 class="text-lg font-semibold truncate">{{ book.title }}</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">by {{ book.author if book.author else 'Unknown' }}</p>
+                                {% if book.isbn %}<p class="text-xs text-gray-500 dark:text-gray-500">ISBN: {{ book.isbn }}</p>{% endif %}
+                                <!-- Updated button to trigger a modal -->
+                                <button class="delete-button mt-4 w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition duration-200" data-book-id="{{ book.id }}">Delete</button>
+                            </div>
                         </div>
                     {% endfor %}
                 </div>
             {% else %}
-                <p>You haven't added any books yet. Search for one above!</p>
+                <p>You haven't added any books yet. <a href="{{ url_for('ocr_upload') }}" class="text-blue-500 hover:underline">Add your first book!</a></p>
             {% endif %}
         </section>
+
+        <!-- Custom Modal for Confirmations -->
+        <div id="confirmModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <p id="modalMessage"></p>
+                <div class="modal-actions">
+                    <button id="modalConfirmBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition duration-200">Confirm</button>
+                    <button id="modalCancelBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition duration-200">Cancel</button>
+                </div>
+            </div>
+        </div>
     </main>
 
     <footer>
         <p class="text-center p-4 text-gray-500 dark:text-gray-400">&copy; 2023 Your WebApp</p>
     </footer>
-
-    <!-- Link to the external JavaScript file -->
-    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </body>
 </html>

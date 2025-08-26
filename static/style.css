@@ -21,55 +21,46 @@ body.light { /* Light Theme Overrides */
     --text-color: #333; /* Dark text for light background */
     --background-color: #f4f7f6; /* Light background */
     --card-background: #ffffff; /* White for cards */
-    --border-color: #e0e0e0;
-    --shadow-light: rgba(0, 0, 0, 0.05); /* Lighter shadow for light theme */
+    --border-color: #ddd;
+    --shadow-light: rgba(0, 0, 0, 0.1); /* Lighter shadow for light theme */
 }
 
-* {
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
-}
-
-html, body {
-    height: 100%;
-    font-family: "Inter", sans-serif;
-    color: var(--text-color);
-    background-color: var(--background-color);
     line-height: 1.6;
     display: flex;
     flex-direction: column;
-    transition: background-color 0.5s ease, color 0.5s ease; /* Smooth transition for theme change */
+    min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Global Styles */
-a {
+main {
+    flex: 1;
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+    width: 100%;
+}
+
+h1, h2, h3, h4 {
     color: var(--primary-color);
-    text-decoration: none;
-    transition: color 0.3s ease;
+    font-weight: 600;
 }
 
-a:hover {
-    color: var(--accent-color);
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
 }
 
-button {
-    cursor: pointer;
-    border: none;
-    padding: 0.75rem 1.25rem;
-    border-radius: 8px;
-    font-size: 1em;
-    font-weight: bold;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 8px var(--shadow-light);
+p, ul, li {
+    font-size: 1rem;
 }
 
-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* Header */
+/* Header & Nav */
 header {
     background-color: var(--card-background);
     color: var(--text-color);
@@ -78,160 +69,104 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--border-color);
-    transition: background-color 0.5s ease, border-color 0.5s ease; /* Smooth transition */
+    flex-wrap: wrap;
 }
 
 header h1 {
-    font-size: 1.8em;
     margin: 0;
-    color: var(--primary-color);
-    transition: color 0.5s ease; /* Smooth transition */
+    color: var(--text-color);
 }
 
 header nav a {
-    margin-left: 1.5rem;
+    color: var(--text-color);
+    text-decoration: none;
     font-weight: 500;
-    color: var(--text-color);
-    padding: 0.5rem 0;
-    position: relative;
-    transition: color 0.5s ease; /* Smooth transition */
+    margin-left: 1.5rem;
+    transition: color 0.2s ease;
 }
 
-header nav a::after {
-    content: '';
-    position: absolute;
-    width: 0;
-    height: 2px;
-    bottom: 0;
-    left: 0;
-    background-color: var(--primary-color);
-    transition: width 0.3s ease, background-color 0.5s ease; /* Smooth transition */
+header nav a:hover {
+    color: var(--secondary-color);
 }
 
-header nav a:hover::after {
-    width: 100%;
-}
-
-/* Main Content Area */
-main {
-    flex-grow: 1;
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 2rem auto;
-    background-color: var(--card-background);
-    border-radius: 12px;
-    box-shadow: 0 6px 12px var(--shadow-light);
-    border: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-    transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease; /* Smooth transition */
-}
-
-main h2 {
-    color: var(--primary-color);
-    margin-bottom: 1.5rem;
-    border-bottom: 2px solid var(--border-color);
-    padding-bottom: 0.5rem;
-    transition: color 0.5s ease, border-color 0.5s ease; /* Smooth transition */
-}
-
-/* Flash Messages */
-.flashes {
-    margin-bottom: 1.5rem;
-}
-
-.flash {
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border-radius: 8px;
-    font-weight: bold;
-    color: var(--flash-text);
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.flash.success {
-    background-color: var(--flash-success);
-}
-
-.flash.danger {
-    background-color: var(--flash-danger);
-}
-
-.flash.info {
-    background-color: var(--flash-info);
-}
-
-/* Form Styles (for login, register, upload, add_book) */
-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-top: 1.5rem;
-}
-
-form input[type="text"],
-form input[type="password"],
-form input[type="email"],
-form input[type="file"] {
-    padding: 0.8rem;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    font-size: 1em;
-    background-color: var(--background-color); /* Lighter background for input */
-    color: var(--text-color);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.5s ease, color 0.5s ease; /* Smooth transition */
-}
-
-form input[type="text"]:focus,
-form input[type="password"]:focus,
-form input[type="email"]:focus,
-form input[type="file"]:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
-    outline: none;
-}
-
-form button[type="submit"] {
-    background-color: var(--primary-color);
+.theme-toggle-button {
+    background-color: var(--secondary-color);
     color: white;
-    width: 100%;
-    padding: 1rem;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
-form button[type="submit"]:hover {
-    background-color: var(--accent-color);
+.theme-toggle-button:hover {
+    background-color: #50E3C2;
 }
 
-/* Auth Pages (Login/Register specific) */
+
+/* Auth pages (Login/Register) */
 .auth-page {
     display: flex;
-    justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    background-color: var(--background-color);
-    transition: background-color 0.5s ease; /* Smooth transition */
+    justify-content: center;
+    height: 100vh;
 }
 
 .auth-container {
     background-color: var(--card-background);
     padding: 2.5rem;
     border-radius: 12px;
-    box-shadow: 0 8px 16px var(--shadow-light);
+    box-shadow: 0 4px 15px var(--shadow-light);
     text-align: center;
     width: 100%;
     max-width: 400px;
-    border: 1px solid var(--border-color);
-    transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease; /* Smooth transition */
 }
 
 .auth-container h2 {
-    color: var(--primary-color);
     margin-bottom: 1.5rem;
-    font-size: 2em;
-    transition: color 0.5s ease; /* Smooth transition */
+    color: var(--primary-color);
+    font-size: 2rem;
+}
+
+.auth-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+form input {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+form input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+form button {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 1rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+form button:hover {
+    background-color: var(--secondary-color);
+}
+
+form button:disabled {
+    background-color: #888;
+    cursor: not-allowed;
 }
 
 .auth-container p {
@@ -239,349 +174,296 @@ form button[type="submit"]:hover {
     font-size: 0.9em;
 }
 
-/* Upload Page Specific */
-.upload-container {
+.auth-container a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: bold;
+}
+
+/* Flashed messages */
+.flashes {
+    margin-bottom: 1rem;
     text-align: center;
 }
 
-.dropzone {
-    border: 2px dashed var(--primary-color);
-    border-radius: 12px;
-    padding: 3rem;
-    margin-top: 1.5rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
-    background-color: rgba(74, 144, 226, 0.05); /* Light blue tint for light theme */
-    transition: background-color 0.5s ease, border-color 0.5s ease; /* Smooth transition */
-}
-
-body.dark .dropzone { /* Dark theme specific styling for dropzone */
-    background-color: rgba(102, 187, 106, 0.1); /* Green tint for dark theme */
-}
-
-
-.dropzone.hover {
-    background-color: rgba(74, 144, 226, 0.1);
-    border-color: var(--accent-color);
-}
-
-.dropzone p {
-    font-size: 1.2em;
-    color: var(--primary-color);
-    font-weight: bold;
-    transition: color 0.5s ease; /* Smooth transition */
-}
-
-.dropzone input[type="file"] {
-    display: none;
-}
-
-/* Chart Container */
-.chart-container {
-    padding: 1.5rem;
-    background-color: var(--background-color);
-    border-radius: 12px;
-    box-shadow: inset 0 2px 4px var(--shadow-light);
-    border: 1px solid var(--border-color);
-    transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease; /* Smooth transition */
-}
-
-/* Notifications */
-.notifications {
-    background-color: var(--background-color);
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: inset 0 2px 4px var(--shadow-light);
-    border: 1px solid var(--border-color);
-    transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease; /* Smooth transition */
-}
-
-.notifications h3 {
-    color: var(--primary-color);
-    margin-bottom: 1rem;
-    font-size: 1.3em;
-    transition: color 0.5s ease; /* Smooth transition */
-}
-
-.notifications ul {
-    list-style: none;
-    padding: 0;
-}
-
-.notifications li {
-    background-color: var(--card-background);
-    border: 1px solid var(--border-color);
-    padding: 0.8rem;
+.flash {
+    padding: 1rem;
+    border-radius: 8px;
     margin-bottom: 0.5rem;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px var(--shadow-light);
-    transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease; /* Smooth transition */
+    font-weight: 500;
 }
 
-/* Library Section Styles */
-.add-book-section, .book-list-section, .last-book-section, .book-search-section, .ocr-upload-section { /* Added .ocr-upload-section */
-    background-color: var(--background-color);
-    padding: 1.5rem;
+.flash.success {
+    background-color: var(--flash-success);
+    color: var(--flash-text);
+}
+
+.flash.danger {
+    background-color: var(--flash-danger);
+    color: var(--flash-text);
+}
+
+.flash.info {
+    background-color: var(--flash-info);
+    color: var(--flash-text);
+}
+
+/* Dashboard styles */
+.dashboard-welcome-card {
+    background-color: var(--card-background);
+    padding: 2rem;
     border-radius: 12px;
-    box-shadow: inset 0 2px 4px var(--shadow-light);
-    border: 1px solid var(--border-color);
-    transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+    box-shadow: 0 4px 8px var(--shadow-light);
+    text-align: center;
+    margin-bottom: 2rem;
 }
 
-.add-book-section h3, .book-list-section h3, .last-book-section h3, .book-search-section h3, .ocr-upload-section h3 { /* Added .ocr-upload-section h3 */
-    color: var(--primary-color);
-    margin-bottom: 1rem;
-    font-size: 1.3em;
-    transition: color 0.5s ease;
-}
-
-.add-book-form {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto; /* Title, Author, Button */
-    gap: 1rem;
-    align-items: center;
-    margin-top: 1rem;
-}
-
-.add-book-form input {
-    width: 100%;
-    padding: 0.8rem;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
+.last-book-section, .chart-container, .notifications {
     background-color: var(--card-background);
-    color: var(--text-color);
-    transition: background-color 0.5s ease, color 0.5s ease, border-color 0.3s ease;
-}
-
-.add-book-form button {
-    width: auto;
-    padding: 0.8rem 1.5rem;
-    white-space: nowrap; /* Prevent button text from wrapping */
-    background-color: var(--primary-color);
-    color: white;
-}
-
-/* Book Search Form Styles */
-.search-form {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.search-form input[type="text"] {
-    flex-grow: 1;
-    padding: 0.8rem;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background-color: var(--card-background);
-    color: var(--text-color);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.5s ease, color 0.5s ease;
-}
-
-.search-form button {
-    padding: 0.8rem 1.5rem;
-    background-color: var(--primary-color);
-    color: white;
-    white-space: nowrap;
-}
-
-/* NEW: OCR Upload Form Styles */
-.ocr-upload-form {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
-    align-items: center;
-}
-
-.ocr-upload-form input[type="file"] {
-    flex-grow: 1;
-    padding: 0.8rem;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background-color: var(--card-background);
-    color: var(--text-color);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.5s ease, color 0.5s ease;
-}
-
-.ocr-upload-form button {
-    padding: 0.8rem 1.5rem;
-    background-color: var(--primary-color);
-    color: white;
-    white-space: nowrap;
-}
-
-
-.book-cards-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-top: 1rem;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px var(--shadow-light);
+    margin-bottom: 2rem;
 }
 
 .book-card {
+    text-align: center;
+    padding: 1.5rem;
+    border-radius: 8px;
+    background-color: var(--background-color);
+    box-shadow: 0 2px 4px var(--shadow-light);
+}
+
+.button {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.2s ease;
+}
+
+.view-library-button {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.view-library-button:hover {
+    background-color: var(--secondary-color);
+}
+
+/* OCR Upload & Results Page */
+.upload-container {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 2rem;
     background-color: var(--card-background);
-    padding: 1.2rem;
-    border-radius: 10px;
+    border-radius: 12px;
     box-shadow: 0 4px 8px var(--shadow-light);
+    text-align: center;
+}
+.upload-container h2 {
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+.upload-container p {
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+}
+
+.dropzone {
+    border: 2px dashed var(--border-color);
+    padding: 3rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+.dropzone:hover {
+    background-color: rgba(102, 187, 106, 0.1);
+}
+.dropzone svg {
+    color: var(--primary-color);
+}
+.hidden {
+    display: none !important;
+}
+.book-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+.book-cards-grid .book-card {
+    background-color: var(--card-background);
+    color: var(--text-color);
     border: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
+    align-items: center;
     justify-content: space-between;
-    transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
 }
-
-.book-card .book-cover {
-    width: 100px; /* Standard size for covers */
-    height: 150px; /* Aspect ratio for covers */
-    object-fit: contain; /* Ensure image fits without cropping */
-    border-radius: 5px;
-    margin-bottom: 0.8rem;
-    align-self: center; /* Center the image in the card */
-    box-shadow: 0 2px 4px var(--shadow-light);
+.book-cards-grid .book-card img {
+    height: 200px;
+    object-fit: contain;
+    width: auto;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
 }
-
-.book-card h4 {
+.book-cards-grid .book-card h4 {
     color: var(--primary-color);
-    margin-bottom: 0.5rem;
-    font-size: 1.1em;
-    transition: color 0.5s ease;
+    font-size: 1.25rem;
+    text-align: center;
 }
-
-.book-card p {
-    font-size: 0.9em;
+.book-cards-grid .book-card p {
+    font-size: 0.9rem;
     color: var(--text-color);
-    margin-bottom: 0.5rem; /* Reduced margin for ISBN line */
-    transition: color 0.5s ease;
+    text-align: center;
+    word-break: break-word;
+}
+.book-cards-grid .book-card .add-to-library-btn {
+    margin-top: 1rem;
 }
 
-.book-card .book-isbn {
-    font-size: 0.8em;
+/* Manual Search Styles */
+.manual-search-container {
+    background-color: var(--card-background);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px var(--shadow-light);
+}
+.manual-search-container input {
+    background-color: var(--background-color);
     color: var(--text-color);
-    margin-bottom: 1rem;
-    opacity: 0.8;
+    border: 1px solid var(--border-color);
 }
-
-.book-card .delete-button, .book-card .add-from-search-button { /* Combined styles */
-    background-color: var(--flash-danger); /* Red for delete */
-    color: white;
-    padding: 0.6rem 1rem;
-    font-size: 0.85em;
-    width: auto; /* Allow button to size to content */
-    align-self: flex-end; /* Align to bottom right */
-    margin-top: auto; /* Push button to bottom if content varies */
-}
-
-.book-card .add-from-search-button {
-    background-color: var(--primary-color); /* Blue/Green for add */
-}
-
-.book-card .delete-button:hover {
-    background-color: #d32f2f; /* Darker red on hover */
-}
-
-.book-card .add-from-search-button:hover {
-    background-color: var(--secondary-color); /* Darker primary color on hover */
-}
-
-
-/* Specific style for the "View All Books" button in last-book-section */
-.last-book-section .view-library-button {
-    display: inline-block; /* Make it behave like a block for padding/margin */
+.manual-search-container button {
     background-color: var(--primary-color);
     color: white;
-    padding: 0.6rem 1rem;
-    font-size: 0.9em;
-    border-radius: 8px;
-    text-align: center;
-    margin-top: 1rem;
-    box-shadow: 0 2px 4px var(--shadow-light);
-    transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+.manual-search-container button:hover {
+    background-color: var(--secondary-color);
 }
 
-.last-book-section .view-library-button:hover {
-    background-color: var(--accent-color);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+/* My Library page */
+.my-library-section .book-card {
+    padding: 1rem;
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    box-shadow: none;
+    text-align: center;
+}
+.my-library-section .book-card img {
+    height: 180px;
+    object-fit: contain;
+}
+.my-library-section .book-card h4 {
+    font-size: 1.1rem;
+}
+.my-library-section .book-card .delete-button {
+    background-color: var(--flash-danger);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: background-color 0.2s ease;
+}
+.my-library-section .book-card .delete-button:hover {
+    background-color: #d32f2f;
 }
 
-
-/* Footer */
-footer {
-    text-align: center;
-    padding: 1.5rem;
-    margin-top: 2rem;
+/* Modal styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.modal-content {
     background-color: var(--card-background);
     color: var(--text-color);
-    box-shadow: 0 -2px 4px var(--shadow-light);
-    border-top: 1px solid var(--border-color);
-    transition: background-color 0.5s ease, border-color 0.5s ease, color 0.5s ease, box-shadow 0.5s ease; /* Smooth transition */
+    padding: 2rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 90%;
+}
+.modal-content p {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+}
+.modal-actions button {
+    margin: 0 0.5rem;
 }
 
-/* Responsive Design */
+/* Responsive design for small screens */
 @media (max-width: 768px) {
+    body {
+        font-size: 14px;
+    }
     header {
         flex-direction: column;
         text-align: center;
-        padding: 1rem;
     }
-
-    header nav {
-        margin-top: 1rem;
+    header h1, header nav {
+        margin-bottom: 1rem;
     }
-
-    header nav a {
-        margin: 0 0.5rem;
-        display: inline-block;
+    header nav a, .theme-toggle-button {
+        margin: 0.5rem;
     }
-
     main {
-        padding: 1rem;
-        margin: 1rem auto;
-        border-radius: 8px;
-        gap: 1.5rem;
+        padding: 0 1rem;
     }
-
     .auth-container {
         padding: 1.5rem;
         border-radius: 8px;
     }
-
-    form input,
-    form button {
+    form input, form button {
         padding: 0.75rem;
     }
-
     .dropzone {
         padding: 2rem;
     }
-
     .dropzone p {
         font-size: 1em;
     }
-
-    .add-book-form, .search-form, .ocr-upload-form { /* Apply to all forms */
-        grid-template-columns: 1fr; /* Stack inputs and button vertically */
+    .book-item {
+        width: calc(50% - 1rem);
     }
-
-    .add-book-form button, .search-form button, .ocr-upload-form button {
-        width: 100%; /* Full width buttons on small screens */
+    .book-cards-grid {
+        grid-template-columns: 1fr;
+    }
+    .manual-search-container form {
+        flex-direction: column;
+        gap: 1rem;
     }
 }
 
-@media (max-width: 480px) {
-    header h1 {
-        font-size: 1.5em;
-    }
+/* Spinner Animation for loaders */
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-top-color: #3498db;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+}
 
-    header nav a {
-        font-size: 0.9em;
-    }
-
-    .auth-container h2 {
-        font-size: 1.8em;
-    }
-
-    form {
-        gap: 0.75rem;
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
     }
 }
